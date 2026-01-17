@@ -1,0 +1,78 @@
+﻿
+> veggie-orders-jo@0.1.0 lint
+> eslint
+
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\functions\src\index.ts
+  34:66  error  Parsing error: Invalid character
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(admin)\admin\accounting\page.tsx
+  4:29  warning  'where' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(cashier)\cashier\page.tsx
+    4:29  warning  'where' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   47:17  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(cashier)\cashier\page.tsx:47:17
+  45 |             if (!isPlaying) {
+  46 |                 audioRef.current?.play().catch(e => console.error("Audio play failed", e));
+> 47 |                 setIsPlaying(true);
+     |                 ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  48 |             }
+  49 |         } else {
+  50 |             audioRef.current?.pause();  react-hooks/set-state-in-effect
+   58:31  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  286:16  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(public)\login\page.tsx
+  24:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(public)\register\page.tsx
+  41:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(shop)\cart\page.tsx
+  17:19  warning  'profile' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  77:48  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  80:21  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(shop)\layout.tsx
+  5:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(shop)\orders\[id]\page.tsx
+  11:61  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  68:35  warning  'isCurrent' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(shop)\orders\page.tsx
+  64:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\(shop)\page.tsx
+  8:27  warning  'Filter' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\app\bootstrap\page.tsx
+  11:19  warning  'profile' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\components\layout\AdminNav.tsx
+  6:73  warning  'X' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\components\layout\Header.tsx
+  6:30  warning  'LogOut' is defined but never used    @typescript-eslint/no-unused-vars
+  6:38  warning  'Menu' is defined but never used      @typescript-eslint/no-unused-vars
+  7:10  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  8:8   warning  'Image' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\components\providers\AuthProvider.tsx
+  5:23  warning  'setDoc' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Ehab\Documents\ehab\veggie-orders-jo\src\components\ui\ProductCard.tsx
+   7:10  warning  'toast' is defined but never used                @typescript-eslint/no-unused-vars
+  11:29  warning  'removeItem' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 26 problems (11 errors, 15 warnings)
+

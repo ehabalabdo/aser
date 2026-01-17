@@ -1,0 +1,75 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    // Note: Roles should be set in Custom Claims via Functions or verified by reading user doc (slower).
+    // For MVP, we read the user doc. Ideally use custom claims.
+    function getUserData() {
+      return get( /databases/$(database)/documents/users/$(request.auth.uid) ).data;
+    }
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
+    }
+    function isCashier() {
+       return isSignedIn() && (getUserData().role == 'cashier' || getUserData().role == 'admin');
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Products, Categories, Offers, Delivery Zones (Public Read, Admin Write)
+    match /products/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /categories/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /offers/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /delivery_zones/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Users (Owner Read/Write, Admin Read)
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || isCashier();
+      allow write: if isOwner(userId) || isAdmin(); 
+      // Note: User can write their own profile on signup. 
+      // Ideally prevent 'role' update.
+      // Validation rule:
+      allow update: if isOwner(userId) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
+    }
+
+    // Orders
+    // Create: Allowed via SDK (but we use Function for integrity). 
+    // If using direct SDK, we must validate. But we are using Function `createOrder` which uses Admin SDK (bypasses rules).
+    // So for Client SDK writes? We should probably BLOCK create from client if we force Function.
+    // Client Read: Owner only.
+    // Cashier/Admin Read: All.
+    match /orders/{orderId} {
+      allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isCashier();
+      
+      // Allow update status ONLY for cashier/admin
+      allow update: if isCashier();
+      
+      // Block direct create (must use Cloud Function)
+      allow create: if false; 
+    }
+    
+    // Settings
+    match /settings/{doc} {
+       allow read: if isAdmin();
+       allow write: if isAdmin();
+    }
+  }
+}
