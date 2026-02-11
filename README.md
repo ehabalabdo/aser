@@ -1,4 +1,4 @@
-# نظام طلبات الخضار (Veggie Orders JO)
+# أسر (Asr)
 
 نظام متكامل لطلب الخضار والفواكه، يحتوي على 3 واجهات:
 1. **العملاء**: تصفح المنتجات، العروض، وإرسال الطلبات.
@@ -14,8 +14,8 @@
 
 1. **استنساخ المستودع**:
    ```bash
-   git clone https://github.com/USERNAME/veggie-orders-jo.git
-   cd veggie-orders-jo
+   git clone https://github.com/USERNAME/asr.git
+   cd asr
    ```
 
 2. **تثبيت المكتبات**:

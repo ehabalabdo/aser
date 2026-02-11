@@ -3,7 +3,6 @@ import { Cairo, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { LanguageProvider } from "@/components/providers/LanguageProvider";
-import DevRoleSwitcher from "@/components/dev/DevRoleSwitcher";
 
 const cairo = Cairo({
   subsets: ["latin", "arabic"],
@@ -18,7 +17,7 @@ const ibmPlex = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "Veggie Orders JO",
+  title: "Asr",
   description: "Fresh vegetables delivered to your doorstep",
 };
 
@@ -35,7 +34,6 @@ export default function RootLayout({
         <LanguageProvider>
           <AuthProvider>
             {children}
-            <DevRoleSwitcher />
           </AuthProvider>
         </LanguageProvider>
       </body>

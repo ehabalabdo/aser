@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Order, OrderStatus } from "@/lib/types";
 import { Loader2, CheckCircle2, Clock, Truck, Home, XCircle, ShoppingBag, ChevronLeft, MapPin, Phone } from "lucide-react";
-import { useParams, useRouter } from "next/navigation"; // Added useRouter
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-
-import { useLanguage } from "@/components/providers/LanguageProvider"; // Added import
-
-
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function OrderDetailsPage() {
     const { t, language } = useLanguage();
@@ -34,46 +29,30 @@ export default function OrderDetailsPage() {
     useEffect(() => {
         if (!id) return;
 
-        // Mock Data for Demo Mode
-        if (id === 'DEMO-123' || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-            const mockOrder: Order = {
-                id: 'DEMO-123',
-                createdAt: Date.now(),
-                userId: 'demo-user',
-                customer: { name: 'Sim User', phone: '079999999', email: 'demo@example.com' },
-                items: [
-                    { productId: '1', nameAr: 'طماطم بلدي', nameEn: 'Local Tomatoes', price: 0.75, qty: 1, unit: 'kg', imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80' },
-                    { productId: '2', nameAr: 'خيار شمسي', nameEn: 'Sunny Cucumber', price: 0.60, qty: 1, unit: 'kg', imageUrl: 'https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?auto=format&fit=crop&w=500&q=80' }
-                ],
-                subtotal: 1.35,
-                deliveryFee: 1.00,
-                total: 2.35,
-                status: 'pending',
-                address: {
-                    zoneId: '1',
-                    zoneName: 'الجبيهة',
-                    street: 'Happy Street',
-                    building: '7',
-                    details: 'Near the park'
-                },
-                paymentMethod: 'COD',
-                statusHistory: []
-            };
-            setOrder(mockOrder);
-            setLoading(false);
-            return;
-        }
-
-        const unsub = onSnapshot(doc(db, "orders", id as string), (docSnap) => {
-            if (docSnap.exists()) {
-                setOrder({ id: docSnap.id, ...docSnap.data() } as Order);
-            } else {
-                setOrder(null);
+        const fetchOrder = async () => {
+            try {
+                const res = await fetch(`/api/orders/${id}`);
+                if (res.ok) {
+                    setOrder(await res.json());
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
-        });
-        return () => unsub();
-    }, [id, t]); // Added t dependency
+        };
+        fetchOrder();
+
+        // Poll for updates every 10 seconds
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/orders/${id}`);
+                if (res.ok) setOrder(await res.json());
+            } catch { /* ignore */ }
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [id]);
 
     if (loading) return <div className="min-h-[80vh] flex items-center justify-center"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
     if (!order) return <div className="text-center py-12 text-lg font-medium text-gray-500">{t("common.no_data")}</div>;
@@ -91,7 +70,7 @@ export default function OrderDetailsPage() {
                 </Button>
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">{t("order.track_title")}</h1>
-                    <p className="text-gray-500 text-sm">#{order.id.slice(0, 8)}...</p>
+                    <p className="text-gray-500 text-sm">#{String(order.id)}</p>
                 </div>
             </div>
 
@@ -179,7 +158,7 @@ export default function OrderDetailsPage() {
                                     <p className="text-sm text-gray-500 font-ibm">{item.qty} × {item.price} {t("common.currency")}</p>
                                 </div>
                                 <div className="font-bold text-gray-900 font-ibm">
-                                    {(item.price * item.qty).toFixed(2)}
+                                    {(item.lineTotal || item.price * item.qty).toFixed(2)}
                                 </div>
                             </div>
                         ))}
@@ -226,8 +205,8 @@ export default function OrderDetailsPage() {
                             </h3>
                             <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
                                 <div>
-                                    <p className="font-bold text-gray-900">{order.customer.name}</p>
-                                    <p className="text-sm text-gray-500 font-ibm">{order.customer.phone}</p>
+                                    <p className="font-bold text-gray-900">{order.customer?.name}</p>
+                                    <p className="text-sm text-gray-500 font-ibm">{order.customer?.phone}</p>
                                 </div>
                                 <Badge variant="secondary">{t("admin.table.customer")}</Badge>
                             </div>

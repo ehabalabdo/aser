@@ -10,7 +10,7 @@ function Badge({ className, variant = "default", ...props }: BadgeProps) {
         default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
         secondary: "border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200",
         danger: "border-transparent bg-red-100 text-red-700",
-        success: "border-transparent bg-green-100 text-green-700",
+        success: "border-transparent bg-brand-100 text-brand-dark",
         warning: "border-transparent bg-yellow-100 text-yellow-800",
         outline: "text-foreground",
     }

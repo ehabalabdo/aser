@@ -2,42 +2,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Product, Category, Offer } from "@/lib/types";
 import ProductCard from "@/components/ui/ProductCard";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Loader2, Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-
-import { useLanguage } from "@/components/providers/LanguageProvider"; // Hook
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function HomePage() {
-    const { t, language } = useLanguage(); // Get t and language
+    const { t, language } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [offers, setOffers] = useState<Offer[]>([]);
     const [loading, setLoading] = useState(true);
-
-    const MOCK_PRODUCTS: Product[] = [
-        { id: "1", nameAr: "طماطم بلدي", nameEn: "Local Tomatoes", descriptionAr: "طماطم حمراء طازجة درجة اولى", descriptionEn: "Fresh red local tomatoes, premium quality", price: 0.75, unit: "كغ", categoryId: "veg", imageUrl: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-        { id: "2", nameAr: "خيار شمسي", nameEn: "Cucumber", descriptionAr: "خيار طازج وصغير", descriptionEn: "Fresh small cucumbers", price: 0.60, unit: "كغ", categoryId: "veg", imageUrl: "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-        { id: "3", nameAr: "بطاطا", nameEn: "Potatoes", descriptionAr: "بطاطا للطبخ والقلي", descriptionEn: "Potatoes perfect for frying and cooking", price: 0.50, unit: "كغ", categoryId: "veg", imageUrl: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-        { id: "4", nameAr: "تفاح أحمر", nameEn: "Red Apples", descriptionAr: "تفاح سكري فاخر", descriptionEn: "Premium sweet red apples", price: 1.25, unit: "كغ", categoryId: "fruit", imageUrl: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-        { id: "5", nameAr: "موز", nameEn: "Bananas", descriptionAr: "موز صومالي درجة اولى", descriptionEn: "Premium Somali Bananas", price: 0.95, unit: "كغ", categoryId: "fruit", imageUrl: "https://images.unsplash.com/photo-1603833665858-e61d17a86224?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-        { id: "6", nameAr: "برتقال عصير", nameEn: "Juice Oranges", descriptionAr: "برتقال طازج للعصير", descriptionEn: "Fresh oranges perfect for juicing", price: 0.85, unit: "كغ", categoryId: "fruit", imageUrl: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-    ];
-
-    const MOCK_CATS: Category[] = [
-        { id: "veg", nameAr: "خضروات", nameEn: "Vegetables", order: 1 },
-        { id: "fruit", nameAr: "فواكه", nameEn: "Fruits", order: 2 },
-        { id: "leafs", nameAr: "ورقيات", nameEn: "Leafy Greens", order: 3 },
-        { id: "herbs", nameAr: "أعشاب", nameEn: "Herbs", order: 4 },
-    ];
 
     // Filters
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -46,30 +26,15 @@ export default function HomePage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            // Force Demo Mode Check
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                setCategories(MOCK_CATS);
-                setProducts(MOCK_PRODUCTS);
-                setOffers([
-                    { id: "1", titleAr: "عرض التوفير", titleEn: "Super Saver", subtitleAr: "سلة خضار مشكلة بـ 5 دنانير فقط", subtitleEn: "Mixed Veggie Box for only 5 JOD", priority: 1, active: true, createdAt: 0, imageUrl: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=1200&q=80" },
-                    { id: "2", titleAr: "فواكه طازجة", titleEn: "Fresh Fruits", subtitleAr: "خصم 20% على جميع الفواكه المستوردة", subtitleEn: "20% Off all imported fruits", priority: 2, active: true, createdAt: 0, imageUrl: "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=1200&q=80" }
-                ]);
-                setLoading(false);
-                return;
-            }
-
             try {
-                // Fetch Categories
-                const catSnap = await getDocs(query(collection(db, "categories"), orderBy("order", "asc")));
-                setCategories(catSnap.docs.map(d => ({ id: d.id, ...d.data() } as Category)));
-
-                // Fetch Active Products
-                const prodSnap = await getDocs(query(collection(db, "products"), where("active", "==", true)));
-                setProducts(prodSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
-
-                // Fetch Active Offers
-                const offerSnap = await getDocs(query(collection(db, "offers"), where("active", "==", true), orderBy("priority", "asc")));
-                setOffers(offerSnap.docs.map(d => ({ id: d.id, ...d.data() } as Offer)));
+                const [prodRes, catRes, offerRes] = await Promise.all([
+                    fetch("/api/products"),
+                    fetch("/api/categories"),
+                    fetch("/api/offers"),
+                ]);
+                if (prodRes.ok) setProducts(await prodRes.json());
+                if (catRes.ok) setCategories(await catRes.json());
+                if (offerRes.ok) setOffers(await offerRes.json());
             } catch (e) {
                 console.error(e);
             } finally {
@@ -89,7 +54,7 @@ export default function HomePage() {
     }, [offers.length]);
 
     const filteredProducts = products.filter(product => {
-        const matchesCategory = selectedCategory === "all" || product.categoryId === selectedCategory;
+        const matchesCategory = selectedCategory === "all" || product.categoryId === Number(selectedCategory);
         const matchesSearch =
             product.nameAr.includes(searchTerm) ||
             (product.nameEn && product.nameEn.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -113,7 +78,7 @@ export default function HomePage() {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <button className="absolute top-2.5 p-1.5 rounded-lg bg-green-50 text-green-700 rtl:left-3 ltr:right-3">
+                    <button className="absolute top-2.5 p-1.5 rounded-lg bg-brand-50 text-brand-dark rtl:left-3 ltr:right-3">
                         <SlidersHorizontal className="w-4 h-4" />
                     </button>
                 </div>
@@ -189,19 +154,16 @@ export default function HomePage() {
                     {categories.map((cat) => (
                         <button
                             key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
+                            onClick={() => setSelectedCategory(String(cat.id))}
                             className={cn(
                                 "flex-none snap-start flex flex-col items-center gap-2 min-w-[5rem] group",
                             )}
                         >
                             <div className={cn("w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-sm border overflow-hidden relative",
-                                selectedCategory === cat.id ? "bg-primary text-white border-primary ring-4 ring-primary/10" : "bg-white text-gray-500 border-gray-100 group-hover:border-primary/50")}>
-                                {/* Placeholder for Category Icon/Image if added later */}
-                                <span className="text-2xl">
-                                    {cat.id === 'veg' ? '🍅' : (cat.id === 'fruit' ? '🍎' : (cat.id === 'leafs' ? '🥬' : '🌿'))}
-                                </span>
+                                selectedCategory === String(cat.id) ? "bg-primary text-white border-primary ring-4 ring-primary/10" : "bg-white text-gray-500 border-gray-100 group-hover:border-primary/50")}>
+                                <span className="text-2xl">🥬</span>
                             </div>
-                            <span className={cn("text-sm font-medium transition-colors", selectedCategory === cat.id ? "text-primary" : "text-gray-600")}>
+                            <span className={cn("text-sm font-medium transition-colors", selectedCategory === String(cat.id) ? "text-primary" : "text-gray-600")}>
                                 {language === 'en' ? (cat.nameEn || cat.nameAr) : cat.nameAr}
                             </span>
                         </button>

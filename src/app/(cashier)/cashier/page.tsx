@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Order, OrderStatus } from "@/lib/types";
-import { Loader2, Check, X, Truck, Package, Home, Clock, MapPin, Phone, User, MonitorSpeaker, Volume2, VolumeX, Printer, AlertCircle, ShoppingBag } from "lucide-react";
+import { Loader2, Truck, Package, Home, Clock, MapPin, MonitorSpeaker, Volume2, VolumeX, Printer, AlertCircle } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { useLanguage } from "@/components/providers/LanguageProvider"; // Added import
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
@@ -22,92 +20,44 @@ export default function CashierDashboard() {
 
     // Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-    const [rejectOrderId, setRejectOrderId] = useState<string | null>(null);
+    const [rejectOrderId, setRejectOrderId] = useState<number | null>(null);
     const [rejectReason, setRejectReason] = useState("");
 
-    // --- Order Fetching Logic ---
-    useEffect(() => {
-        const q = query(
-            collection(db, "orders"),
-            orderBy("createdAt", "desc")
-        );
-
-        if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-            const MOCK_ORDERS: Order[] = [
-                {
-                    id: "DEMO-101",
-                    userId: "u1",
-                    customer: { name: "خالد وليد", phone: "0790000000", email: "khalid@demo.com" },
-                    address: { zoneId: "z1", zoneName: "التلاع العلي", street: "شارع المدينة", building: "12" },
-                    items: [
-                        { productId: "p1", nameAr: "طماطم بلدي", price: 0.85, qty: 3, unit: "كغ", imageUrl: "" },
-                        { productId: "p2", nameAr: "خيار شمسي", price: 0.65, qty: 2, unit: "كغ", imageUrl: "" }
-                    ],
-                    subtotal: 3.85,
-                    deliveryFee: 1.5,
-                    total: 5.35,
-                    paymentMethod: 'COD',
-                    status: "pending",
-                    createdAt: Date.now() - 1000 * 60 * 5, // 5 mins ago
-                    statusHistory: []
-                },
-                {
-                    id: "DEMO-102",
-                    userId: "u2",
-                    customer: { name: "سعاد احمد", phone: "0780000000", email: "suad@demo.com" },
-                    address: { zoneId: "z2", zoneName: "الجبيهة", street: "شارع الجامعة", building: "5B" },
-                    items: [
-                        { productId: "p3", nameAr: "بطاطا", price: 0.55, qty: 5, unit: "كغ", imageUrl: "" }
-                    ],
-                    subtotal: 2.75,
-                    deliveryFee: 1.0,
-                    total: 3.75,
-                    paymentMethod: 'COD',
-                    status: "accepted",
-                    createdAt: Date.now() - 1000 * 60 * 20, // 20 mins ago
-                    statusHistory: []
-                },
-                {
-                    id: "DEMO-103",
-                    userId: "u3",
-                    customer: { name: "محمد علي", phone: "0770000000", email: "mohd@demo.com" },
-                    address: { zoneId: "z1", zoneName: "خلدا", street: "شارع وصفي التل", building: "20" },
-                    items: [
-                        { productId: "p4", nameAr: "تفاح أحمر", price: 1.25, qty: 2, unit: "كغ", imageUrl: "" }
-                    ],
-                    subtotal: 2.50,
-                    deliveryFee: 1.5,
-                    total: 4.00,
-                    paymentMethod: 'COD',
-                    status: "out_for_delivery",
-                    createdAt: Date.now() - 1000 * 60 * 45, // 45 mins ago
-                    statusHistory: []
-                }
-            ];
-            setOrders(MOCK_ORDERS);
+    // --- Order Fetching Logic (polling every 5s) ---
+    const fetchOrders = useCallback(async () => {
+        try {
+            const res = await fetch("/api/admin/orders");
+            if (res.ok) {
+                const data = await res.json();
+                setOrders(data);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
             setLoading(false);
-            return;
         }
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-            setOrders(data);
-            setLoading(false);
-        }, (err) => {
-            console.error(err);
-        });
-
-        return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        fetchOrders();
+        const interval = setInterval(fetchOrders, 5000);
+        return () => clearInterval(interval);
+    }, [fetchOrders]);
 
     // --- Ringing Logic ---
     useEffect(() => {
-        const pendingOrders = orders.filter(o => o.status === 'pending');
-        if (pendingOrders.length > 0 && soundEnabled) {
+        // If there are pending orders and sound is enabled, and we aren't already playing, play.
+        const hasPending = orders.some(o => o.status === 'pending');
+
+        if (hasPending && soundEnabled) {
+            // We can play directly without state if we just want to ensure it's looping
+            // But if we want to track 'isPlaying' for UI, we should do it carefully.
+            // Simplified: Just ensure it plays if enabled and needed.
             if (audioRef.current && audioRef.current.paused) {
                 audioRef.current.play().catch(e => console.error("Audio play failed", e));
             }
         } else {
+            // Stop if no pending or sound disabled
             if (audioRef.current && !audioRef.current.paused) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
@@ -117,41 +67,21 @@ export default function CashierDashboard() {
 
 
     // --- Status Actions ---
-    const handleUpdateStatus = async (orderId: string, status: OrderStatus, reason?: string) => {
-        if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
+    const handleUpdateStatus = async (orderId: number | string, status: OrderStatus, reason?: string) => {
+        try {
+            const res = await fetch(`/api/orders/${orderId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status, rejectionReason: reason }),
+            });
+            if (!res.ok) throw new Error("Failed to update");
+            // Update local state immediately
             setOrders(prev => prev.map(o => {
                 if (o.id === orderId) {
-                    const newHistory = [...(o.statusHistory || []), { status, at: Date.now(), by: 'demo-cashier' }];
-                    return { ...o, status, statusHistory: newHistory, rejectionReason: reason };
+                    return { ...o, status, rejectionReason: reason };
                 }
                 return o;
             }));
-            setRejectOrderId(null);
-            setRejectReason("");
-            return;
-        }
-
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const updateData: any = {
-                status,
-                statusHistory: [...(orders.find(o => o.id === orderId)?.statusHistory || []), {
-                    status,
-                    at: Date.now(),
-                    by: user?.uid
-                }]
-            };
-
-            if (status === 'accepted') {
-                updateData.acceptedBy = user?.uid;
-                updateData.acceptedAt = Date.now();
-            } else if (status === 'rejected') {
-                updateData.rejectedBy = user?.uid;
-                updateData.rejectedAt = Date.now();
-                updateData.rejectionReason = reason;
-            }
-
-            await updateDoc(doc(db, "orders", orderId), updateData);
             setRejectOrderId(null);
             setRejectReason("");
         } catch (e) {
@@ -173,7 +103,7 @@ export default function CashierDashboard() {
     // We can show minimal recent completed orders or none
     // const completedOrders = orders.filter(o => ['delivered', 'rejected'].includes(o.status)).slice(0, 5);
 
-    if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center p-8"><Loader2 className="animate-spin h-10 w-10 text-emerald-500" /></div>;
+    if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center p-8"><Loader2 className="animate-spin h-10 w-10 text-brand-light" /></div>;
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans flex flex-col gap-6">
@@ -182,8 +112,8 @@ export default function CashierDashboard() {
             {/* Header */}
             <div className="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg no-print">
                 <div className="flex items-center gap-3">
-                    <div className="bg-emerald-500/10 p-2 rounded-lg">
-                        <MonitorSpeaker className="w-8 h-8 text-emerald-500" />
+                    <div className="bg-brand/10 p-2 rounded-lg">
+                        <MonitorSpeaker className="w-8 h-8 text-brand-light" />
                     </div>
                     <div>
                         <h1 className="font-black text-2xl tracking-wide text-white">{t("cashier.title")}</h1>
@@ -194,7 +124,7 @@ export default function CashierDashboard() {
                     <Button
                         variant={soundEnabled ? "primary" : "outline"}
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={cn("gap-2", soundEnabled ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-slate-700 text-slate-400 hover:bg-slate-800")}
+                        className={cn("gap-2", soundEnabled ? "bg-brand hover:bg-brand-dark text-white" : "border-slate-700 text-slate-400 hover:bg-slate-800")}
                     >
                         {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
                         {soundEnabled ? t("cashier.sound_on") : t("cashier.sound_off")}
@@ -226,7 +156,7 @@ export default function CashierDashboard() {
                                         {t("cashier.reject")}
                                     </Button>
                                     <Button
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white animate-pulse w-full shadow-lg shadow-emerald-900/50"
+                                        className="bg-brand hover:bg-brand-dark text-white animate-pulse w-full shadow-lg shadow-brand-dark/50"
                                         onClick={() => handleUpdateStatus(order.id, 'accepted')}
                                     >
                                         {t("cashier.accept")}
@@ -306,7 +236,7 @@ export default function CashierDashboard() {
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="mt-4">
                                     <Button
-                                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/50"
+                                        className="w-full bg-brand hover:bg-brand-dark text-white shadow-lg shadow-brand-dark/50"
                                         onClick={() => handleUpdateStatus(order.id, 'delivered')}
                                     >
                                         <Home className="w-4 h-4 mr-2" />
@@ -358,14 +288,14 @@ export default function CashierDashboard() {
                         </div>
 
                         <div className="flex justify-between mb-6 text-lg font-bold">
-                            <div>#{selectedOrder.id.slice(0, 5)}</div>
+                            <div>#{selectedOrder.id}</div>
                             <div>{new Date(selectedOrder.createdAt).toLocaleDateString(language === 'ar' ? 'ar-JO' : 'en-US')}</div>
                         </div>
 
                         <div className="mb-8 p-4 border border-black rounded-lg">
                             <p className="font-bold mb-2">{t("cashier.receipt.customer_info")}:</p>
-                            <p>{selectedOrder.customer.name}</p>
-                            <p>{selectedOrder.customer.phone}</p>
+                            <p>{selectedOrder.customer?.name}</p>
+                            <p>{selectedOrder.customer?.phone}</p>
                             <p>{selectedOrder.address.zoneName} - {selectedOrder.address.street} - {selectedOrder.address.building}</p>
                         </div>
 
@@ -423,7 +353,7 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
 
             <div className="mr-3">
                 <div className="flex justify-between items-start mb-3">
-                    <span className="font-mono font-bold text-slate-300 text-lg">#{order.id.slice(0, 5)}</span>
+                    <span className="font-mono font-bold text-slate-300 text-lg">#{order.id}</span>
                     <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
                         <Clock className="w-3 h-3" />
                         {new Date(order.createdAt).toLocaleTimeString(language === 'ar' ? 'ar-JO' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -431,9 +361,9 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
                 </div>
 
                 <div className="mb-3">
-                    <h3 className="font-bold text-white text-lg mb-1">{order.customer.name}</h3>
+                    <h3 className="font-bold text-white text-lg mb-1">{order.customer?.name || 'غير معروف'}</h3>
                     <div className="flex items-center gap-2 text-slate-400 text-sm">
-                        <MapPin className="w-3 h-3 text-emerald-500" />
+                        <MapPin className="w-3 h-3 text-brand-light" />
                         {order.address.zoneName} - {order.address.street}
                     </div>
                 </div>
@@ -447,7 +377,7 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
                         {order.items.map((item, idx) => (
                             <div key={idx} className="flex justify-between text-sm">
                                 <span className="text-slate-200">{language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}</span>
-                                <span className="font-mono text-emerald-400 font-bold">x{item.qty}</span>
+                                <span className="font-mono text-brand-light font-bold">x{item.qty}</span>
                             </div>
                         ))}
                     </div>
@@ -455,7 +385,7 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
 
                 <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
                     <span className="text-slate-400 text-sm">{t("common.total")}:</span>
-                    <span className="font-bold text-xl text-emerald-400 font-mono">{order.total.toFixed(2)} {t("common.currency")}</span>
+                    <span className="font-bold text-xl text-brand-light font-mono">{order.total.toFixed(2)} {t("common.currency")}</span>
                 </div>
 
                 {actions}

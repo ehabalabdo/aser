@@ -5,8 +5,8 @@ import { CartItem } from './types';
 interface CartState {
     items: CartItem[];
     addItem: (item: CartItem) => void;
-    removeItem: (productId: string) => void;
-    updateQuantity: (productId: string, qty: number) => void;
+    removeItem: (key: string) => void;
+    updateQuantity: (key: string, qty: number) => void;
     clearCart: () => void;
     subtotal: () => number;
 }
@@ -17,30 +17,31 @@ export const useCart = create<CartState>()(
             items: [],
             addItem: (item) => {
                 const currentItems = get().items;
-                const existingItem = currentItems.find((i) => i.productId === item.productId);
+                const key = item.cartKey || String(item.productId);
+                const existingItem = currentItems.find((i) => (i.cartKey || String(i.productId)) === key);
                 if (existingItem) {
                     set({
                         items: currentItems.map((i) =>
-                            i.productId === item.productId
+                            (i.cartKey || String(i.productId)) === key
                                 ? { ...i, ...item, qty: i.qty + item.qty }
                                 : i
                         ),
                     });
                 } else {
-                    set({ items: [...currentItems, item] });
+                    set({ items: [...currentItems, { ...item, cartKey: key }] });
                 }
             },
-            removeItem: (productId) => {
-                set({ items: get().items.filter((i) => i.productId !== productId) });
+            removeItem: (key) => {
+                set({ items: get().items.filter((i) => (i.cartKey || String(i.productId)) !== key) });
             },
-            updateQuantity: (productId, qty) => {
+            updateQuantity: (key, qty) => {
                 if (qty <= 0) {
-                    get().removeItem(productId);
+                    get().removeItem(key);
                     return;
                 }
                 set({
                     items: get().items.map((i) =>
-                        i.productId === productId ? { ...i, qty } : i
+                        (i.cartKey || String(i.productId)) === key ? { ...i, qty } : i
                     ),
                 });
             },
@@ -50,7 +51,7 @@ export const useCart = create<CartState>()(
             },
         }),
         {
-            name: 'veggie-cart-storage',
+            name: 'asr-cart-storage',
         }
     )
 );

@@ -1,19 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-
-import { useLanguage } from "@/components/providers/LanguageProvider"; // Added import
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function RegisterPage() {
     const { t } = useLanguage();
     const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [phone, setPhone] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -26,29 +22,32 @@ export default function RegisterPage() {
         setError("");
 
         try {
-            // 1. Create Auth User
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // 2. Create User Profile in Firestore
-            await setDoc(doc(db, "users", user.uid), {
-                uid: user.uid,
-                email: user.email,
-                displayName: name,
-                phoneNumber: phone,
-                role: "customer",
-                createdAt: serverTimestamp(),
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: username.trim().toLowerCase(),
+                    displayName: name,
+                    phone,
+                    password,
+                }),
             });
-
-            router.push("/");
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            console.error(err);
-            if (err.code === 'auth/email-already-in-use') {
-                setError("البريد الإلكتروني مستخدم بالفعل.");
-            } else {
-                setError("فشل إنشاء الحساب. حاول مرة أخرى.");
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.error || "فشل إنشاء الحساب. حاول مرة أخرى.");
+                return;
             }
+            // Redirect based on role
+            const role = data.user?.role;
+            if (role === 'admin') {
+                window.location.href = '/admin';
+            } else if (role === 'cashier') {
+                window.location.href = '/cashier';
+            } else {
+                window.location.href = '/';
+            }
+        } catch {
+            setError("فشل إنشاء الحساب. حاول مرة أخرى.");
         } finally {
             setLoading(false);
         }
@@ -78,7 +77,7 @@ export default function RegisterPage() {
                             name="name"
                             type="text"
                             required
-                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand focus:z-10 sm:text-sm"
                             placeholder={t("register.full_name")}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -92,7 +91,7 @@ export default function RegisterPage() {
                             name="phone"
                             type="tel"
                             required
-                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand focus:z-10 sm:text-sm"
                             placeholder={t("register.phone_placeholder")}
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
@@ -100,16 +99,16 @@ export default function RegisterPage() {
                     </div>
 
                     <div>
-                        <label htmlFor="email" className="sr-only">{t("auth.email")}</label>
+                        <label htmlFor="username" className="sr-only">{t("auth.username")}</label>
                         <input
-                            id="email"
-                            name="email"
-                            type="email"
+                            id="username"
+                            name="username"
+                            type="text"
                             required
-                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                            placeholder={t("auth.email")}
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand focus:z-10 sm:text-sm"
+                            placeholder={t("auth.username")}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                         />
                     </div>
 
@@ -121,7 +120,7 @@ export default function RegisterPage() {
                             type="password"
                             required
                             minLength={6}
-                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                            className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand focus:z-10 sm:text-sm"
                             placeholder={t("register.password_placeholder")}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -132,7 +131,7 @@ export default function RegisterPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-70 transition-colors"
+                            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-brand hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand disabled:opacity-70 transition-colors"
                         >
                             {loading ? <Loader2 className="animate-spin h-5 w-5" /> : t("register.submit")}
                         </button>
@@ -142,7 +141,7 @@ export default function RegisterPage() {
                 <div className="text-center mt-4">
                     <p className="text-sm text-gray-600">
                         {t("auth.has_account")}{" "}
-                        <Link href="/login" className="font-medium text-green-600 hover:text-green-500">
+                        <Link href="/login" className="font-medium text-brand hover:text-brand-dark">
                             {t("auth.login_link") || t("auth.submit_login")}
                         </Link>
                     </p>

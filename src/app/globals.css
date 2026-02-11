@@ -1,17 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-primary: #0F766E;
-  /* Emerald 700 */
-  --color-primary-hover: #0d9488;
-  --color-secondary: #16A34A;
-  /* Green 600 */
-  --color-accent: #FACC15;
-  /* Yellow 400 */
-  --color-surface: #F8FAFC;
-  /* Slate 50 */
+  /* Colors – Pantone Earthy Palette */
+  --color-primary: #215732;
+  --color-primary-hover: #1B4928;
+  --color-secondary: #CF5C1A;
+  --color-secondary-hover: #B8510F;
+  --color-accent: #B5CC8E;
+  --color-surface: #FAF8F5;
   --color-danger: #DC2626;
+
+  /* Brand shades for Tailwind utilities */
+  --color-brand: #215732;
+  --color-brand-dark: #1B4928;
+  --color-brand-light: #7DA06B;
+  --color-brand-50: #EEF3E6;
+  --color-brand-100: #D8E5C0;
+  --color-brown: #6B5344;
+  --color-maroon: #5C2018;
+  --color-warm-tan: #C9A87C;
 
   /* Fonts */
   --font-cairo: var(--font-cairo);
@@ -51,15 +58,15 @@ h6 {
   }
 
   .btn-primary {
-    @apply bg-[#0F766E] text-white hover:bg-[#0d9488] shadow-lg shadow-[#0F766E]/20 hover:shadow-xl hover:shadow-[#0F766E]/30;
+    @apply bg-[#215732] text-white hover:bg-[#1B4928] shadow-lg shadow-[#215732]/20 hover:shadow-xl hover:shadow-[#215732]/30;
   }
 
   .btn-secondary {
-    @apply bg-[#16A34A] text-white hover:bg-[#15803d] shadow-lg shadow-[#16A34A]/20;
+    @apply bg-[#CF5C1A] text-white hover:bg-[#B8510F] shadow-lg shadow-[#CF5C1A]/20;
   }
 
   .btn-outline {
-    @apply border-2 border-[#0F766E] text-[#0F766E] hover:bg-[#0F766E]/10;
+    @apply border-2 border-[#215732] text-[#215732] hover:bg-[#215732]/10;
   }
 
   .card-hover {

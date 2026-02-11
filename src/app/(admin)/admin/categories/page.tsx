@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Category } from "@/lib/types";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -14,58 +12,51 @@ export default function CategoriesPage() {
 
     // Form State
     const [nameAr, setNameAr] = useState("");
-    const [nameEn, setNameEn] = useState(""); // Added
-    const [order, setOrder] = useState(0);
+    const [nameEn, setNameEn] = useState("");
+    const [sortOrder, setSortOrder] = useState(0);
     const [formSubmitting, setFormSubmitting] = useState(false);
 
     useEffect(() => {
-        if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-            setCategories([
-                { id: "veg", nameAr: "خضروات", nameEn: "Vegetables", order: 1 },
-                { id: "fruit", nameAr: "فواكه", nameEn: "Fruits", order: 2 },
-            ]);
-            setLoading(false);
-            return;
-        }
-
-        const q = query(collection(db, "categories"), orderBy("order", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Category[];
-            setCategories(data);
-            setLoading(false);
-        });
-        return () => unsubscribe();
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch("/api/admin/categories");
+                if (res.ok) {
+                    const data = await res.json();
+                    setCategories(data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCategories();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormSubmitting(true);
         try {
-            const payload = {
-                nameAr,
-                nameEn, // Added
-                order: Number(order)
-            };
-
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                if (editingCategory) {
-                    setCategories(prev => prev.map(c => c.id === editingCategory.id ? { ...c, ...payload } : c));
-                } else {
-                    const newCategory: Category = { id: Math.random().toString(), ...payload };
-                    setCategories(prev => [...prev, newCategory]);
-                }
-                closeModal();
-                setFormSubmitting(false);
-                return;
-            }
+            const payload = { nameAr, nameEn, sortOrder: Number(sortOrder) };
 
             if (editingCategory) {
-                await updateDoc(doc(db, "categories", editingCategory.id), payload);
+                const res = await fetch("/api/admin/categories", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: editingCategory.id, ...payload }),
+                });
+                if (!res.ok) throw new Error("Failed to update");
+                const updated = await res.json();
+                setCategories(prev => prev.map(c => c.id === editingCategory.id ? updated : c));
             } else {
-                await addDoc(collection(db, "categories"), payload);
+                const res = await fetch("/api/admin/categories", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error("Failed to create");
+                const created = await res.json();
+                setCategories(prev => [...prev, created]);
             }
             closeModal();
         } catch (e) {
@@ -76,13 +67,20 @@ export default function CategoriesPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
         if (confirm("هل أنت متأكد من الحذف؟")) {
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                setCategories(prev => prev.filter(c => c.id !== id));
-                return;
+            try {
+                const res = await fetch("/api/admin/categories", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                });
+                if (res.ok) {
+                    setCategories(prev => prev.filter(c => c.id !== id));
+                }
+            } catch (e) {
+                console.error(e);
             }
-            await deleteDoc(doc(db, "categories", id));
         }
     };
 
@@ -90,13 +88,13 @@ export default function CategoriesPage() {
         if (category) {
             setEditingCategory(category);
             setNameAr(category.nameAr);
-            setNameEn(category.nameEn || ""); // Added
-            setOrder(category.order);
+            setNameEn(category.nameEn || "");
+            setSortOrder(category.sortOrder);
         } else {
             setEditingCategory(null);
             setNameAr("");
-            setNameEn(""); // Added
-            setOrder(categories.length + 1);
+            setNameEn("");
+            setSortOrder(categories.length + 1);
         }
         setIsModalOpen(true);
     };
@@ -114,7 +112,7 @@ export default function CategoriesPage() {
                 <h1 className="text-2xl font-bold text-gray-900">إدارة التصنيفات</h1>
                 <button
                     onClick={() => openModal()}
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="flex items-center px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark"
                 >
                     <Plus className="w-5 h-5 ml-2" />
                     إضافة تصنيف
@@ -143,7 +141,7 @@ export default function CategoriesPage() {
                         {categories.map((category) => (
                             <tr key={category.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {category.order}
+                                    {category.sortOrder}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {category.nameAr}
@@ -177,7 +175,7 @@ export default function CategoriesPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={nameAr}
                                     onChange={(e) => setNameAr(e.target.value)}
                                 />
@@ -186,7 +184,7 @@ export default function CategoriesPage() {
                                 <label className="block text-sm font-medium text-gray-700">Category Name (English)</label>
                                 <input
                                     type="text"
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={nameEn}
                                     onChange={(e) => setNameEn(e.target.value)}
                                     dir="ltr"
@@ -197,9 +195,9 @@ export default function CategoriesPage() {
                                 <input
                                     type="number"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-                                    value={order}
-                                    onChange={(e) => setOrder(Number(e.target.value))}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                                    value={sortOrder}
+                                    onChange={(e) => setSortOrder(Number(e.target.value))}
                                 />
                             </div>
                             <div className="flex justify-end gap-3 mt-6">
@@ -213,7 +211,7 @@ export default function CategoriesPage() {
                                 <button
                                     type="submit"
                                     disabled={formSubmitting}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                                    className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark disabled:opacity-50"
                                 >
                                     {formSubmitting ? "جاري الحفظ..." : "حفظ"}
                                 </button>

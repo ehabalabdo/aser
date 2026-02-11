@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { DeliveryZone } from "@/lib/types";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -10,66 +8,57 @@ export default function ZonesPage() {
     const [zones, setZones] = useState<DeliveryZone[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     // Form State
     const [nameAr, setNameAr] = useState("");
-    const [nameEn, setNameEn] = useState(""); // Added
+    const [nameEn, setNameEn] = useState("");
     const [fee, setFee] = useState("");
-    const [order, setOrder] = useState(0);
+    const [sortOrder, setSortOrder] = useState(0);
     const [active, setActive] = useState(true);
     const [formSubmitting, setFormSubmitting] = useState(false);
 
     useEffect(() => {
-        if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-            setZones([
-                { id: "1", nameAr: "الجبيهة", nameEn: "Jubaiha", fee: 1.0, active: true, order: 1 },
-                { id: "2", nameAr: "تلاع العلي", nameEn: "Tla Al Ali", fee: 1.5, active: true, order: 2 },
-                { id: "3", nameAr: "خلدا", nameEn: "Khalda", fee: 2.0, active: true, order: 3 },
-            ]);
-            setLoading(false);
-            return;
-        }
-
-        const q = query(collection(db, "delivery_zones"), orderBy("order", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as DeliveryZone[];
-            setZones(data);
-            setLoading(false);
-        });
-        return () => unsubscribe();
+        const fetchZones = async () => {
+            try {
+                const res = await fetch("/api/admin/zones");
+                if (res.ok) {
+                    const data = await res.json();
+                    setZones(data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchZones();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormSubmitting(true);
         try {
-            const payload = {
-                nameAr,
-                nameEn, // Added
-                fee: Number(fee),
-                order: Number(order),
-                active
-            };
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                if (editingId) {
-                    setZones(prev => prev.map(z => z.id === editingId ? { ...z, ...payload, id: z.id } as DeliveryZone : z));
-                } else {
-                    const newZone: DeliveryZone = { ...payload, id: Math.random().toString() } as DeliveryZone;
-                    setZones(prev => [...prev, newZone]);
-                }
-                closeModal();
-                setFormSubmitting(false);
-                return;
-            }
+            const payload = { nameAr, nameEn, fee: Number(fee), sortOrder: Number(sortOrder), active };
 
             if (editingId) {
-                await updateDoc(doc(db, "delivery_zones", editingId), payload);
+                const res = await fetch("/api/admin/zones", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: editingId, ...payload }),
+                });
+                if (!res.ok) throw new Error("Failed to update");
+                const updated = await res.json();
+                setZones(prev => prev.map(z => z.id === editingId ? updated : z));
             } else {
-                await addDoc(collection(db, "delivery_zones"), payload);
+                const res = await fetch("/api/admin/zones", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error("Failed to create");
+                const created = await res.json();
+                setZones(prev => [...prev, created]);
             }
             closeModal();
         } catch (e) {
@@ -80,13 +69,20 @@ export default function ZonesPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
         if (confirm("هل أنت متأكد من الحذف؟")) {
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                setZones(prev => prev.filter(z => z.id !== id));
-                return;
+            try {
+                const res = await fetch("/api/admin/zones", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                });
+                if (res.ok) {
+                    setZones(prev => prev.filter(z => z.id !== id));
+                }
+            } catch (e) {
+                console.error(e);
             }
-            await deleteDoc(doc(db, "delivery_zones", id));
         }
     };
 
@@ -94,16 +90,16 @@ export default function ZonesPage() {
         if (zone) {
             setEditingId(zone.id);
             setNameAr(zone.nameAr);
-            setNameEn(zone.nameEn || ""); // Added
+            setNameEn(zone.nameEn || "");
             setFee(zone.fee.toString());
-            setOrder(zone.order);
+            setSortOrder(zone.sortOrder);
             setActive(zone.active);
         } else {
             setEditingId(null);
             setNameAr("");
-            setNameEn(""); // Added
+            setNameEn("");
             setFee("");
-            setOrder(zones.length + 1);
+            setSortOrder(zones.length + 1);
             setActive(true);
         }
         setIsModalOpen(true);
@@ -122,7 +118,7 @@ export default function ZonesPage() {
                 <h1 className="text-2xl font-bold text-gray-900">إدارة مناطق التوصيل</h1>
                 <button
                     onClick={() => openModal()}
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="flex items-center px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark"
                 >
                     <Plus className="w-5 h-5 ml-2" />
                     منطقة جديدة
@@ -154,7 +150,7 @@ export default function ZonesPage() {
                         {zones.map((zone) => (
                             <tr key={zone.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {zone.order}
+                                    {zone.sortOrder}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {zone.nameAr} ({zone.nameEn || 'N/A'})
@@ -163,7 +159,7 @@ export default function ZonesPage() {
                                     {zone.fee} د.أ
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {zone.active ? <span className="text-green-600">فعال</span> : <span className="text-red-500">غير فعال</span>}
+                                    {zone.active ? <span className="text-brand">فعال</span> : <span className="text-red-500">غير فعال</span>}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex gap-4">
                                     <button onClick={() => openModal(zone)} className="text-blue-600 hover:text-blue-900">
@@ -191,7 +187,7 @@ export default function ZonesPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={nameAr}
                                     onChange={(e) => setNameAr(e.target.value)}
                                 />
@@ -202,7 +198,7 @@ export default function ZonesPage() {
                                     type="number"
                                     step="0.01"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={fee}
                                     onChange={(e) => setFee(e.target.value)}
                                 />
@@ -212,9 +208,9 @@ export default function ZonesPage() {
                                 <input
                                     type="number"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-                                    value={order}
-                                    onChange={(e) => setOrder(Number(e.target.value))}
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                                    value={sortOrder}
+                                    onChange={(e) => setSortOrder(Number(e.target.value))}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
@@ -232,7 +228,7 @@ export default function ZonesPage() {
                                 <button
                                     type="submit"
                                     disabled={formSubmitting}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                                    className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark disabled:opacity-50"
                                 >
                                     {formSubmitting ? "جاري الحفظ..." : "حفظ"}
                                 </button>

@@ -22,7 +22,7 @@ export default function ShopLayout({
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-transform hover:scale-110 z-50 flex items-center justify-center"
+                className="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:bg-[#1fb855] transition-transform hover:scale-110 z-50 flex items-center justify-center"
             >
                 <MessageCircle className="w-8 h-8" />
             </a>

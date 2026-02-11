@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Product, Category } from "@/lib/types";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
-import ImageUpload from "@/components/admin/ImageUpload";
 import Image from "next/image";
 
 export default function ProductsPage() {
@@ -15,62 +12,69 @@ export default function ProductsPage() {
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [formSubmitting, setFormSubmitting] = useState(false);
 
     // Form Fields
     const [nameAr, setNameAr] = useState("");
-    const [nameEn, setNameEn] = useState(""); // Added
+    const [nameEn, setNameEn] = useState("");
     const [descriptionAr, setDescriptionAr] = useState("");
-    const [descriptionEn, setDescriptionEn] = useState(""); // Added
-    const [price, setPrice] = useState("");
-    const [unit, setUnit] = useState("kg");
+    const [descriptionEn, setDescriptionEn] = useState("");
+    const [selectedUnits, setSelectedUnits] = useState<Record<string, { checked: boolean; price: string }>>({
+        kg: { checked: true, price: "" },
+        piece: { checked: false, price: "" },
+        box: { checked: false, price: "" },
+        bundle: { checked: false, price: "" },
+    });
     const [categoryId, setCategoryId] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [active, setActive] = useState(true);
 
     useEffect(() => {
-        if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-            const MOCK_PRODUCTS: Product[] = [
-                { id: "1", nameAr: "طماطم بلدي", descriptionAr: "طماطم حمراء طازجة درجة اولى", price: 0.75, unit: "كغ", categoryId: "veg", imageUrl: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-                { id: "2", nameAr: "خيار شمسي", descriptionAr: "خيار طازج وصغير", price: 0.60, unit: "كغ", categoryId: "veg", imageUrl: "https://images.unsplash.com/photo-1449300079323-02e209d9d3a6?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-                { id: "3", nameAr: "بطاطا", descriptionAr: "بطاطا للطبخ والقلي", price: 0.50, unit: "كغ", categoryId: "veg", imageUrl: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-                { id: "4", nameAr: "تفاح أحمر", descriptionAr: "تفاح سكري فاخر", price: 1.25, unit: "كغ", categoryId: "fruit", imageUrl: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-                { id: "5", nameAr: "موز", descriptionAr: "موز صومالي درجة اولى", price: 0.95, unit: "كغ", categoryId: "fruit", imageUrl: "https://images.unsplash.com/photo-1603833665858-e61d17a86224?auto=format&fit=crop&w=500&q=80", createdAt: 0, updatedAt: 0, active: true },
-            ];
-            const MOCK_CATS: Category[] = [
-                { id: "veg", nameAr: "خضروات", order: 1 },
-                { id: "fruit", nameAr: "فواكه", order: 2 },
-            ];
-            setProducts(MOCK_PRODUCTS);
-            setCategories(MOCK_CATS);
-            setLoading(false);
-            return;
-        }
-
-        const unsubProducts = onSnapshot(query(collection(db, "products"), orderBy("createdAt", "desc")), (snap) => {
-            setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)));
-            setLoading(false);
-        });
-        const unsubCategories = onSnapshot(collection(db, "categories"), (snap) => {
-            setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Category)));
-        });
-        return () => {
-            unsubProducts();
-            unsubCategories();
-        }
+        const fetchData = async () => {
+            try {
+                const res = await fetch("/api/admin/products");
+                if (res.ok) {
+                    const data = await res.json();
+                    setProducts(data.products);
+                    setCategories(data.categories);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, []);
+
+    const UNIT_LABELS: Record<string, string> = {
+        kg: "كيلو",
+        piece: "قطعة",
+        box: "صندوق",
+        bundle: "ضمة",
+    };
 
     const openModal = (product?: Product) => {
         if (product) {
             setEditingId(product.id);
             setNameAr(product.nameAr);
             setNameEn(product.nameEn || "");
-            setDescriptionAr(product.descriptionAr);
+            setDescriptionAr(product.descriptionAr || "");
             setDescriptionEn(product.descriptionEn || "");
-            setPrice(product.price.toString());
-            setUnit(product.unit);
-            setCategoryId(product.categoryId || "");
+            const newUnits: Record<string, { checked: boolean; price: string }> = {
+                kg: { checked: false, price: "" },
+                piece: { checked: false, price: "" },
+                box: { checked: false, price: "" },
+                bundle: { checked: false, price: "" },
+            };
+            product.units.forEach(u => {
+                if (newUnits[u.unit]) {
+                    newUnits[u.unit] = { checked: true, price: u.price.toString() };
+                }
+            });
+            setSelectedUnits(newUnits);
+            setCategoryId(product.categoryId ? String(product.categoryId) : "");
             setImageUrl(product.imageUrl || "");
             setActive(product.active);
         } else {
@@ -79,8 +83,12 @@ export default function ProductsPage() {
             setNameEn("");
             setDescriptionAr("");
             setDescriptionEn("");
-            setPrice("");
-            setUnit("kg");
+            setSelectedUnits({
+                kg: { checked: true, price: "" },
+                piece: { checked: false, price: "" },
+                box: { checked: false, price: "" },
+                bundle: { checked: false, price: "" },
+            });
             setCategoryId("");
             setImageUrl("");
             setActive(true);
@@ -88,43 +96,70 @@ export default function ProductsPage() {
         setIsModalOpen(true);
     };
 
+    const refreshProducts = async () => {
+        try {
+            const res = await fetch("/api/admin/products");
+            if (res.ok) {
+                const data = await res.json();
+                setProducts(data.products);
+                setCategories(data.categories);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormSubmitting(true);
+
+        // Build units array from checkboxes
+        const checkedUnits = Object.entries(selectedUnits)
+            .filter(([, v]) => v.checked)
+            .map(([key, v]) => ({ unit: key, price: Number(v.price) || 0 }));
+
+        if (checkedUnits.length === 0) {
+            alert("يجب اختيار وحدة واحدة على الأقل");
+            setFormSubmitting(false);
+            return;
+        }
+
+        // Validate that all checked units have a price
+        const missingPrice = checkedUnits.find(u => u.price <= 0);
+        if (missingPrice) {
+            alert(`يجب إدخال سعر للوحدة: ${UNIT_LABELS[missingPrice.unit]}`);
+            setFormSubmitting(false);
+            return;
+        }
+
         try {
             const payload = {
                 nameAr,
                 nameEn,
                 descriptionAr,
                 descriptionEn,
-                price: Number(price),
-                unit,
-                categoryId,
+                units: checkedUnits,
+                categoryId: Number(categoryId),
                 imageUrl,
                 active,
-                updatedAt: Date.now()
             };
 
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                if (editingId) {
-                    setProducts(prev => prev.map(p => p.id === editingId ? { ...p, ...payload, id: p.id } as Product : p));
-                } else {
-                    const newProduct: Product = { ...payload, id: Math.random().toString(), createdAt: Date.now() } as Product;
-                    setProducts(prev => [newProduct, ...prev]);
-                }
-                setIsModalOpen(false);
-                setFormSubmitting(false);
-                return;
-            }
-
             if (editingId) {
-                await updateDoc(doc(db, "products", editingId), payload);
-            } else {
-                await addDoc(collection(db, "products"), {
-                    ...payload,
-                    createdAt: Date.now()
+                const res = await fetch("/api/admin/products", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: editingId, ...payload }),
                 });
+                if (!res.ok) throw new Error("Failed to update");
+            } else {
+                const res = await fetch("/api/admin/products", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error("Failed to create");
             }
+            await refreshProducts();
             setIsModalOpen(false);
         } catch (e) {
             console.error(e);
@@ -134,13 +169,20 @@ export default function ProductsPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm("Are you sure?")) {
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                setProducts(prev => prev.filter(p => p.id !== id));
-                return;
+    const handleDelete = async (id: number) => {
+        if (confirm("هل أنت متأكد من الحذف؟")) {
+            try {
+                const res = await fetch("/api/admin/products", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                });
+                if (res.ok) {
+                    setProducts(prev => prev.filter(p => p.id !== id));
+                }
+            } catch (e) {
+                console.error(e);
             }
-            await deleteDoc(doc(db, "products", id));
         }
     };
 
@@ -150,7 +192,7 @@ export default function ProductsPage() {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">إدارة المنتجات</h1>
-                <button onClick={() => openModal()} className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <button onClick={() => openModal()} className="flex items-center px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark">
                     <Plus className="w-5 h-5 ml-2" />
                     منتج جديد
                 </button>
@@ -171,8 +213,14 @@ export default function ProductsPage() {
                         </div>
                         <div className="p-4 flex-1">
                             <h3 className="font-bold text-lg">{product.nameAr}</h3>
-                            <p className="text-sm text-gray-500 mb-2">{categories.find(c => c.id === product.categoryId)?.nameAr || "بلا تصنيف"}</p>
-                            <p className="text-green-600 font-bold">{product.price} د.أ / {product.unit}</p>
+                            <p className="text-sm text-gray-500 mb-2">{categories.find(c => c.id === Number(product.categoryId))?.nameAr || "بلا تصنيف"}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {product.units.map(u => (
+                                    <span key={u.unit} className="text-brand font-bold text-sm bg-brand-50 px-2 py-1 rounded">
+                                        {u.price} د.أ / {UNIT_LABELS[u.unit] || u.unit}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                         <div className="p-4 border-t bg-gray-50 flex justify-end gap-2">
                             <button onClick={() => openModal(product)} className="text-blue-600 hover:bg-blue-50 p-2 rounded"><Pencil className="w-5 h-5" /></button>
@@ -209,19 +257,44 @@ export default function ProductsPage() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="w-1/3">
-                                    <label className="block text-sm font-medium">الوحدة</label>
-                                    <select className="w-full border rounded p-2" value={unit} onChange={e => setUnit(e.target.value)}>
-                                        <option value="kg">كيلو</option>
-                                        <option value="piece">قطعة</option>
-                                        <option value="box">صندوق</option>
-                                        <option value="bundle">ضمة</option>
-                                    </select>
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium">السعر (د.أ)</label>
-                                    <input type="number" step="0.01" required className="w-full border rounded p-2" value={price} onChange={e => setPrice(e.target.value)} />
+                            <div>
+                                <label className="block text-sm font-medium mb-2">الوحدات والأسعار</label>
+                                <div className="space-y-3 border rounded-lg p-4 bg-gray-50">
+                                    {Object.entries(UNIT_LABELS).map(([key, label]) => (
+                                        <div key={key} className="flex items-center gap-3">
+                                            <input
+                                                type="checkbox"
+                                                id={`unit-${key}`}
+                                                checked={selectedUnits[key]?.checked || false}
+                                                onChange={e => {
+                                                    setSelectedUnits(prev => ({
+                                                        ...prev,
+                                                        [key]: { ...prev[key], checked: e.target.checked }
+                                                    }));
+                                                }}
+                                                className="w-4 h-4 accent-brand"
+                                            />
+                                            <label htmlFor={`unit-${key}`} className="text-sm font-medium w-16">{label}</label>
+                                            {selectedUnits[key]?.checked && (
+                                                <div className="flex items-center gap-1 flex-1">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="السعر"
+                                                        className="border rounded p-2 w-32"
+                                                        value={selectedUnits[key]?.price || ""}
+                                                        onChange={e => {
+                                                            setSelectedUnits(prev => ({
+                                                                ...prev,
+                                                                [key]: { ...prev[key], price: e.target.value }
+                                                            }));
+                                                        }}
+                                                    />
+                                                    <span className="text-sm text-gray-500">د.أ</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
@@ -236,8 +309,13 @@ export default function ProductsPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1">صورة المنتج</label>
-                                <ImageUpload value={imageUrl} onChange={setImageUrl} folder="products" />
+                                <label className="block text-sm font-medium mb-1">صورة المنتج (رابط)</label>
+                                <input type="url" className="w-full border rounded p-2" dir="ltr" placeholder="https://..." value={imageUrl} onChange={e => setImageUrl(e.target.value)} />
+                                {imageUrl && (
+                                    <div className="mt-2 relative w-24 h-24 rounded overflow-hidden border">
+                                        <Image src={imageUrl} alt="preview" fill className="object-cover" />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -247,7 +325,7 @@ export default function ProductsPage() {
 
                             <div className="flex justify-end gap-2 pt-4">
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded hover:bg-gray-50">إلغاء</button>
-                                <button type="submit" disabled={formSubmitting} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50">
+                                <button type="submit" disabled={formSubmitting} className="px-4 py-2 bg-brand text-white rounded hover:bg-brand-dark disabled:opacity-50">
                                     {formSubmitting ? <Loader2 className="animate-spin w-5 h-5" /> : "حفظ"}
                                 </button>
                             </div>

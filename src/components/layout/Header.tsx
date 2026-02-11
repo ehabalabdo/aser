@@ -1,17 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useCart } from "@/lib/store";
 import { ShoppingCart, User } from "lucide-react";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import { useLanguage } from "@/components/providers/LanguageProvider";
+import { useState, useRef, useEffect } from "react";
 
 export function Header() {
     const { user, profile, logout } = useAuth();
-    const { t } = useLanguage(); // Hook
+    const { t } = useLanguage();
     const cartItems = useCart((state) => state.items);
     const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
         <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -19,7 +34,8 @@ export function Header() {
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-green-600">{t("app.name")}</span>
+                        <img src="/logo.png" alt={t("app.name")} className="w-10 h-10" />
+                        <span className="text-2xl font-bold text-brand">{t("app.name")}</span>
                     </Link>
 
                     {/* Actions */}
@@ -27,18 +43,18 @@ export function Header() {
                         <LanguageSwitcher />
 
                         {profile?.role === 'admin' && (
-                            <Link href="/admin" className="text-sm font-medium text-gray-500 hover:text-green-600 hidden sm:block">
+                            <Link href="/admin" className="text-sm font-medium text-gray-500 hover:text-brand hidden sm:block">
                                 {t("nav.admin")}
                             </Link>
                         )}
 
                         {profile?.role === 'cashier' && (
-                            <Link href="/cashier" className="text-sm font-medium text-gray-500 hover:text-green-600 hidden sm:block">
+                            <Link href="/cashier" className="text-sm font-medium text-gray-500 hover:text-brand hidden sm:block">
                                 {t("nav.cashier")}
                             </Link>
                         )}
 
-                        <Link href="/cart" className="relative p-2 text-gray-600 hover:text-green-600 transition-colors">
+                        <Link href="/cart" className="relative p-2 text-gray-600 hover:text-brand transition-colors">
                             <ShoppingCart className="w-6 h-6" />
                             {cartCount > 0 && (
                                 <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
@@ -48,20 +64,28 @@ export function Header() {
                         </Link>
 
                         {user ? (
-                            <div className="relative group">
-                                <button className="flex items-center gap-2 text-gray-700 hover:text-green-600">
+                            <div className="relative" ref={menuRef}>
+                                <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 text-gray-700 hover:text-brand">
                                     <User className="w-6 h-6" />
                                     <span className="hidden sm:inline text-sm font-medium">{profile?.displayName || t("nav.users")}</span>
                                 </button>
-                                <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block border border-gray-100">
-                                    <Link href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">{t("nav.orders")}</Link>
-                                    <button onClick={() => logout()} className="block w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
-                                        {t("logout")}
-                                    </button>
-                                </div>
+                                {menuOpen && (
+                                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100 z-50">
+                                        {profile?.role === 'admin' && (
+                                            <Link href="/admin" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 sm:hidden">{t("nav.admin")}</Link>
+                                        )}
+                                        {profile?.role === 'cashier' && (
+                                            <Link href="/cashier" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 sm:hidden">{t("nav.cashier")}</Link>
+                                        )}
+                                        <Link href="/orders" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">{t("nav.orders")}</Link>
+                                        <button onClick={() => { setMenuOpen(false); logout(); }} className="block w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+                                            {t("logout")}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : (
-                            <Link href="/login" className="text-sm font-medium text-green-600 hover:text-green-500">
+                            <Link href="/login" className="text-sm font-medium text-brand hover:text-brand-dark">
                                 تسجيل دخول
                             </Link>
                         )}

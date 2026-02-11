@@ -1,83 +1,67 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Offer } from "@/lib/types";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
-import ImageUpload from "@/components/admin/ImageUpload";
 import Image from "next/image";
 
 export default function OffersPage() {
     const [offers, setOffers] = useState<Offer[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     // Form State
     const [titleAr, setTitleAr] = useState("");
-    const [titleEn, setTitleEn] = useState(""); // Added
+    const [titleEn, setTitleEn] = useState("");
     const [subtitleAr, setSubtitleAr] = useState("");
-    const [subtitleEn, setSubtitleEn] = useState(""); // Added
+    const [subtitleEn, setSubtitleEn] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [priority, setPriority] = useState(1);
     const [active, setActive] = useState(true);
     const [formSubmitting, setFormSubmitting] = useState(false);
 
     useEffect(() => {
-        if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-            setOffers([
-                { id: "1", titleAr: "عرض خاص", titleEn: "Special Offer", subtitleAr: "خصم 20% على الفواكه", subtitleEn: "20% off Fruits", priority: 1, active: true, createdAt: 0, imageUrl: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80" },
-                { id: "2", titleAr: "توصيل مجاني", titleEn: "Free Delivery", subtitleAr: "للطلبات فوق 20 دينار", subtitleEn: "Orders over 20 JOD", priority: 2, active: true, createdAt: 0, imageUrl: "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?auto=format&fit=crop&w=800&q=80" }
-            ]);
-            setLoading(false);
-            return;
-        }
-
-        const q = query(collection(db, "offers"), orderBy("priority", "asc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Offer[];
-            setOffers(data);
-            setLoading(false);
-        });
-        return () => unsubscribe();
+        const fetchOffers = async () => {
+            try {
+                const res = await fetch("/api/admin/offers");
+                if (res.ok) {
+                    const data = await res.json();
+                    setOffers(data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchOffers();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormSubmitting(true);
         try {
-            const payload = {
-                titleAr,
-                titleEn, // Added
-                subtitleAr,
-                subtitleEn, // Added
-                imageUrl,
-                priority: Number(priority),
-                active,
-                createdAt: Date.now() // Will be ignored on update if not handled, but safely handled below
-            };
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                if (editingId) {
-                    setOffers(prev => prev.map(o => o.id === editingId ? { ...o, ...payload, id: o.id, createdAt: o.createdAt } as Offer : o));
-                } else {
-                    const newOffer: Offer = { ...payload, id: Math.random().toString(), createdAt: Date.now() } as Offer;
-                    setOffers(prev => [...prev, newOffer]);
-                }
-                closeModal();
-                setFormSubmitting(false);
-                return;
-            }
+            const payload = { titleAr, titleEn, subtitleAr, subtitleEn, imageUrl, priority: Number(priority), active };
 
             if (editingId) {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { createdAt, ...updatePayload } = payload;
-                await updateDoc(doc(db, "offers", editingId), updatePayload);
+                const res = await fetch("/api/admin/offers", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: editingId, ...payload }),
+                });
+                if (!res.ok) throw new Error("Failed to update");
+                const updated = await res.json();
+                setOffers(prev => prev.map(o => o.id === editingId ? updated : o));
             } else {
-                await addDoc(collection(db, "offers"), payload);
+                const res = await fetch("/api/admin/offers", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error("Failed to create");
+                const created = await res.json();
+                setOffers(prev => [...prev, created]);
             }
             closeModal();
         } catch (e) {
@@ -88,13 +72,20 @@ export default function OffersPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
         if (confirm("هل أنت متأكد من الحذف؟")) {
-            if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                setOffers(prev => prev.filter(o => o.id !== id));
-                return;
+            try {
+                const res = await fetch("/api/admin/offers", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                });
+                if (res.ok) {
+                    setOffers(prev => prev.filter(o => o.id !== id));
+                }
+            } catch (e) {
+                console.error(e);
             }
-            await deleteDoc(doc(db, "offers", id));
         }
     };
 
@@ -102,18 +93,18 @@ export default function OffersPage() {
         if (offer) {
             setEditingId(offer.id);
             setTitleAr(offer.titleAr);
-            setTitleEn(offer.titleEn || ""); // Added
+            setTitleEn(offer.titleEn || "");
             setSubtitleAr(offer.subtitleAr || "");
-            setSubtitleEn(offer.subtitleEn || ""); // Added
+            setSubtitleEn(offer.subtitleEn || "");
             setImageUrl(offer.imageUrl || "");
             setPriority(offer.priority);
             setActive(offer.active);
         } else {
             setEditingId(null);
             setTitleAr("");
-            setTitleEn(""); // Added
+            setTitleEn("");
             setSubtitleAr("");
-            setSubtitleEn(""); // Added
+            setSubtitleEn("");
             setImageUrl("");
             setPriority(1);
             setActive(true);
@@ -134,7 +125,7 @@ export default function OffersPage() {
                 <h1 className="text-2xl font-bold text-gray-900">إدارة العروض</h1>
                 <button
                     onClick={() => openModal()}
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    className="flex items-center px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand-dark"
                 >
                     <Plus className="w-5 h-5 ml-2" />
                     عرض جديد
@@ -182,7 +173,7 @@ export default function OffersPage() {
                                 <input
                                     type="text"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={titleAr}
                                     onChange={(e) => setTitleAr(e.target.value)}
                                 />
@@ -191,7 +182,7 @@ export default function OffersPage() {
                                 <label className="block text-sm font-medium text-gray-700">Offer Title (English)</label>
                                 <input
                                     type="text"
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={titleEn}
                                     onChange={(e) => setTitleEn(e.target.value)}
                                     dir="ltr"
@@ -201,7 +192,7 @@ export default function OffersPage() {
                                 <label className="block text-sm font-medium text-gray-700">عنوان فرعي (عربي)</label>
                                 <input
                                     type="text"
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={subtitleAr}
                                     onChange={(e) => setSubtitleAr(e.target.value)}
                                 />
@@ -210,7 +201,7 @@ export default function OffersPage() {
                                 <label className="block text-sm font-medium text-gray-700">Subtitle (English)</label>
                                 <input
                                     type="text"
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={subtitleEn}
                                     onChange={(e) => setSubtitleEn(e.target.value)}
                                     dir="ltr"
@@ -221,14 +212,19 @@ export default function OffersPage() {
                                 <input
                                     type="number"
                                     required
-                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                     value={priority}
                                     onChange={(e) => setPriority(Number(e.target.value))}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">صورة العرض</label>
-                                <ImageUpload folder="offers" value={imageUrl} onChange={setImageUrl} />
+                                <label className="block text-sm font-medium mb-1">صورة العرض (رابط)</label>
+                                <input type="url" className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand" dir="ltr" placeholder="https://..." value={imageUrl} onChange={e => setImageUrl(e.target.value)} />
+                                {imageUrl && (
+                                    <div className="mt-2 relative w-24 h-24 rounded overflow-hidden border">
+                                        <Image src={imageUrl} alt="preview" fill className="object-cover" />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <input type="checkbox" id="activeOffer" checked={active} onChange={e => setActive(e.target.checked)} />
@@ -245,7 +241,7 @@ export default function OffersPage() {
                                 <button
                                     type="submit"
                                     disabled={formSubmitting}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+                                    className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark disabled:opacity-50"
                                 >
                                     {formSubmitting ? "جاري الحفظ..." : "حفظ"}
                                 </button>

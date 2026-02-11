@@ -7,7 +7,7 @@ type Translations = Record<string, Record<Language, string>>;
 
 const translations: Translations = {
     // General
-    "app.name": { ar: "فيجي للأغذية", en: "Veggie Foods" },
+    "app.name": { ar: "أسر", en: "Asr" },
     "loading": { ar: "جاري التحميل...", en: "Loading..." },
     "error": { ar: "حدث خطأ", en: "An error occurred" },
 
@@ -62,7 +62,9 @@ const translations: Translations = {
     "auth.login_title": { ar: "تسجيل الدخول", en: "Login" },
     "auth.login_desc": { ar: "أدخل بريدك الإلكتروني وكلمة المرور", en: "Enter your email and password" },
     "auth.register_title": { ar: "إنشاء حساب", en: "Create Account" },
-    "auth.email": { ar: "البريد الإلكتروني", en: "Email" },
+    "auth.email": { ar: "اسم المستخدم", en: "Username" },
+    "auth.username": { ar: "اسم المستخدم", en: "Username" },
+    "auth.username_placeholder": { ar: "أدخل اسم المستخدم", en: "Enter username" },
     "auth.password": { ar: "كلمة المرور", en: "Password" },
     "auth.name": { ar: "الاسم الكامل", en: "Full Name" },
     "auth.phone": { ar: "رقم الهاتف", en: "Phone Number" },
@@ -75,7 +77,7 @@ const translations: Translations = {
     "auth.register_now": { ar: "سجل مجاناً", en: "Register for free" },
 
     // Home
-    "home.welcome": { ar: "أهلا بك في فيجي", en: "Welcome to Veggie" },
+    "home.welcome": { ar: "أهلا بك في أسر", en: "Welcome to Asr" },
     "home.search_placeholder": { ar: "ابحث عن منتج...", en: "Search for a product..." },
     "home.categories": { ar: "التصنيفات", en: "Categories" },
     "home.featured": { ar: "عروض مميزة", en: "Featured Offers" },

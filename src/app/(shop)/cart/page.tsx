@@ -3,38 +3,29 @@
 import { useCart } from "@/lib/store";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "@/lib/firebase";
 import { DeliveryZone } from "@/lib/types";
 import { Loader2, Trash2, Plus, Minus, MapPin, Truck, ChevronLeft, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
-import { useLanguage } from "@/components/providers/LanguageProvider"; // Added import
-
-const FALLBACK_NAMES: Record<string, string> = {
-    "طماطم بلدي": "Local Tomatoes",
-    "خيار شمسي": "Cucumber",
-    "بطاطا": "Potatoes",
-    "تفاح أحمر": "Red Apples",
-    "موز": "Bananas",
-    "برتقال عصير": "Juice Oranges",
-    "سلة خضار مشكلة": "Mixed Veggies",
-    "فواكه مستوردة": "Imported Fruits"
+const UNIT_LABELS_AR: Record<string, string> = {
+    kg: "كيلو",
+    piece: "قطعة",
+    box: "صندوق",
+    bundle: "ضمة",
 };
 
-const UNIT_MAP: Record<string, string> = {
-    "كغ": "kg",
-    "حبة": "pc",
-    "سلة": "box",
-    "ربطة": "bundle"
+const UNIT_LABELS_EN: Record<string, string> = {
+    kg: "Kg",
+    piece: "Piece",
+    box: "Box",
+    bundle: "Bundle",
 };
 
 export default function CartPage() {
@@ -58,17 +49,12 @@ export default function CartPage() {
     useEffect(() => {
         const fetchZones = async () => {
             try {
-                const q = query(collection(db, "delivery_zones"), where("active", "==", true), orderBy("order", "asc"));
-                const snap = await getDocs(q);
-                setZones(snap.docs.map(d => ({ id: d.id, ...d.data() } as DeliveryZone)));
+                const res = await fetch("/api/zones");
+                if (res.ok) {
+                    setZones(await res.json());
+                }
             } catch (e) {
                 console.error(e);
-                // Demo Mode Fallback
-                setZones([
-                    { id: "1", nameAr: "الجبيهة", nameEn: "Jubaiha", fee: 1.0, active: true },
-                    { id: "2", nameAr: "تلاع العلي", nameEn: "Tla' Al Ali", fee: 1.5, active: true },
-                    { id: "3", nameAr: "خلدا", nameEn: "Khalda", fee: 2.0, active: true },
-                ] as DeliveryZone[]);
             } finally {
                 setLoadingZones(false);
             }
@@ -76,7 +62,7 @@ export default function CartPage() {
         fetchZones();
     }, []);
 
-    const selectedZone = zones.find(z => z.id === selectedZoneId);
+    const selectedZone = zones.find(z => z.id === Number(selectedZoneId));
     const deliveryFee = selectedZone ? selectedZone.fee : 0;
     const total = subtotal() + deliveryFee;
 
@@ -94,30 +80,32 @@ export default function CartPage() {
         setError("");
 
         try {
-            const createOrder = httpsCallable(functions, 'createOrder');
-            const result = await createOrder({
-                address: {
-                    zoneId: selectedZoneId,
-                    zoneName: language === 'en' ? (selectedZone?.nameEn || selectedZone?.nameAr) : selectedZone?.nameAr,
-                    street,
-                    building,
-                    details
-                },
-                items: items
+            const res = await fetch("/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: items.map(item => ({
+                        productId: item.productId,
+                        unit: item.unit,
+                        qty: item.qty,
+                    })),
+                    address: {
+                        zoneId: Number(selectedZoneId),
+                        street,
+                        building,
+                        details,
+                    },
+                }),
             });
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { orderId } = result.data as any;
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.error || t("cart.order_fail_internet"));
+                return;
+            }
             clearCart();
-            router.push(`/orders/${orderId}`);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (e: any) {
-            console.error(e);
-            // Fallback for demo if function not deployed: allow generic error handling
+            router.push(`/orders/${data.orderId}`);
+        } catch {
             setError(t("cart.order_fail_internet"));
-
-            // FOR DEV ONLY: If function fails (not deployed), show alert
-            alert("Note: Cloud Function 'createOrder' needs to be deployed. Using local fallback is NOT secure but implemented for MVP demo if Function unavail.");
         } finally {
             setIsSubmitting(false);
         }
@@ -126,8 +114,8 @@ export default function CartPage() {
     if (items.length === 0) {
         return (
             <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-6 animate-fade-in relative">
-                <div className="w-32 h-32 bg-green-50 rounded-full flex items-center justify-center mb-4 relative">
-                    <div className="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-20" />
+                <div className="w-32 h-32 bg-brand-50 rounded-full flex items-center justify-center mb-4 relative">
+                    <div className="absolute inset-0 bg-brand-100 rounded-full animate-ping opacity-20" />
                     <Truck className="w-16 h-16 text-primary" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900">{t("cart.empty")}</h2>
@@ -158,8 +146,10 @@ export default function CartPage() {
                 </div>
 
                 <div className="space-y-4">
-                    {items.map((item) => (
-                        <Card key={item.productId} className="flex flex-row items-center p-3 sm:p-4 gap-4 hover:shadow-md transition-shadow">
+                    {items.map((item) => {
+                        const itemKey = item.cartKey || String(item.productId);
+                        return (
+                        <Card key={itemKey} className="flex flex-row items-center p-3 sm:p-4 gap-4 hover:shadow-md transition-shadow">
                             <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
                                 {item.imageUrl ? (
                                     <Image src={item.imageUrl} alt={item.nameAr} fill className="object-cover" />
@@ -172,21 +162,21 @@ export default function CartPage() {
                                 <div>
                                     <div className="flex justify-between items-start">
                                         <h3 className="font-bold text-gray-900 text-lg">
-                                            {language === 'en' ? (item.nameEn || FALLBACK_NAMES[item.nameAr] || item.nameAr) : item.nameAr}
+                                            {language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}
                                         </h3>
-                                        <button onClick={() => removeItem(item.productId)} className="text-gray-400 hover:text-danger transition-colors p-1">
+                                        <button onClick={() => removeItem(itemKey)} className="text-gray-400 hover:text-danger transition-colors p-1">
                                             <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
-                                    <p className="text-primary font-bold text-sm bg-green-50 w-fit px-2 py-0.5 rounded-md mt-1">
-                                        {item.price.toFixed(2)} {t("common.currency")} <span className="text-gray-400 font-normal">/ {language === 'en' ? (UNIT_MAP[item.unit] || item.unit) : item.unit}</span>
+                                    <p className="text-primary font-bold text-sm bg-brand-50 w-fit px-2 py-0.5 rounded-md mt-1">
+                                        {item.price.toFixed(2)} {t("common.currency")} <span className="text-gray-400 font-normal">/ {language === 'en' ? (UNIT_LABELS_EN[item.unit] || item.unit) : (UNIT_LABELS_AR[item.unit] || item.unit)}</span>
                                     </p>
                                 </div>
 
                                 <div className="flex items-center justify-between mt-2">
                                     <div className="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
                                         <button
-                                            onClick={() => updateQuantity(item.productId, item.qty - 1)}
+                                            onClick={() => updateQuantity(itemKey, item.qty - 1)}
                                             className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-danger transition-colors disabled:opacity-50"
                                             disabled={item.qty <= 1}
                                         >
@@ -194,7 +184,7 @@ export default function CartPage() {
                                         </button>
                                         <span className="w-10 text-center font-bold text-gray-900 font-ibm">{item.qty}</span>
                                         <button
-                                            onClick={() => updateQuantity(item.productId, item.qty + 1)}
+                                            onClick={() => updateQuantity(itemKey, item.qty + 1)}
                                             className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-primary transition-colors"
                                         >
                                             <Plus className="w-4 h-4" />
@@ -204,7 +194,8 @@ export default function CartPage() {
                                 </div>
                             </div>
                         </Card>
-                    ))}
+                    );
+                    })}
                 </div>
             </div>
 

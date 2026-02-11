@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Order } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Loader2, ShoppingBag, CreditCard, ArrowUpRight, ArrowDownRight, Package, Users } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
-
-import { useLanguage } from "@/components/providers/LanguageProvider"; // Added import
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function AdminDashboard() {
     const { t, language } = useLanguage();
@@ -19,75 +16,25 @@ export default function AdminDashboard() {
         activeOrders: 0,
         totalCustomers: 0
     });
-    const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+    const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function fetchDashboardData() {
             setLoading(true);
             try {
-                if (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID === 'demo-mode') {
-                    // Mock Data
+                const res = await fetch("/api/admin/stats");
+                if (res.ok) {
+                    const data = await res.json();
+                    const byStatus = data.orders.byStatus || {};
+                    const activeCount = (byStatus.pending || 0) + (byStatus.accepted || 0) + (byStatus.preparing || 0) + (byStatus.out_for_delivery || 0);
                     setStats({
-                        totalOrders: 1250,
-                        totalSales: 15430.50,
-                        activeOrders: 12,
-                        totalCustomers: 450
+                        totalOrders: data.orders.total,
+                        totalSales: data.orders.revenue,
+                        activeOrders: activeCount,
+                        totalCustomers: data.users,
                     });
-                    const MOCK_RECENT: Order[] = [
-                        {
-                            id: "DEMO-101",
-                            createdAt: Date.now(),
-                            customer: { name: "خالد يوسف", phone: "0790000000", email: "khalid@demo.com" },
-                            status: "pending",
-                            total: 12.50,
-                            items: [], userId: "u1",
-                            address: { zoneId: "z1", zoneName: "الجبيهة", street: "شارع 1", building: "1" },
-                            subtotal: 10, deliveryFee: 2.5, paymentMethod: 'COD', statusHistory: []
-                        },
-                        {
-                            id: "DEMO-102",
-                            createdAt: Date.now() - 3600000,
-                            customer: { name: "منى أحمد", phone: "0791111111", email: "mona@demo.com" },
-                            status: "delivered",
-                            total: 24.00,
-                            items: [], userId: "u2",
-                            address: { zoneId: "z2", zoneName: "خلدا", street: "شارع 2", building: "2" },
-                            subtotal: 22, deliveryFee: 2, paymentMethod: 'COD', statusHistory: []
-                        },
-                        {
-                            id: "DEMO-103",
-                            createdAt: Date.now() - 7200000,
-                            customer: { name: "سعيد علي", phone: "0792222222", email: "said@demo.com" },
-                            status: "preparing",
-                            total: 8.75,
-                            items: [], userId: "u3",
-                            address: { zoneId: "z1", zoneName: "الجبيهة", street: "شارع 3", building: "3" },
-                            subtotal: 7, deliveryFee: 1.75, paymentMethod: 'COD', statusHistory: []
-                        },
-                        {
-                            id: "DEMO-104",
-                            createdAt: Date.now() - 86400000,
-                            customer: { name: "ليلى حسن", phone: "0793333333", email: "laila@demo.com" },
-                            status: "rejected",
-                            total: 15.00,
-                            items: [], userId: "u4",
-                            address: { zoneId: "z3", zoneName: "تلاع العلي", street: "شارع 4", building: "4" },
-                            subtotal: 13, deliveryFee: 2, paymentMethod: 'COD', statusHistory: []
-                        }
-                    ];
-                    setRecentOrders(MOCK_RECENT);
-                } else {
-                    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(10));
-                    const snapshot = await getDocs(q);
-                    const orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Order));
-                    setRecentOrders(orders);
-                    setStats({
-                        totalOrders: orders.length,
-                        totalSales: orders.reduce((acc, o) => acc + o.total, 0),
-                        activeOrders: orders.filter(o => ['pending', 'accepted', 'preparing', 'out_for_delivery'].includes(o.status)).length,
-                        totalCustomers: new Set(orders.map(o => o.userId)).size
-                    });
+                    setRecentOrders(data.recentOrders || []);
                 }
             } catch (error) {
                 console.error("Failed to fetch dashboard data", error);
@@ -95,7 +42,6 @@ export default function AdminDashboard() {
                 setLoading(false);
             }
         }
-
         fetchDashboardData();
     }, []);
 
@@ -113,8 +59,8 @@ export default function AdminDashboard() {
                     icon={CreditCard}
                     trend="+12%"
                     trendUp={true}
-                    className="bg-gradient-to-br from-emerald-50 to-white border-emerald-100"
-                    iconClassName="text-emerald-600 bg-emerald-100"
+                    className="bg-gradient-to-br from-brand-50 to-white border-brand-100"
+                    iconClassName="text-brand bg-brand-100"
                 />
                 <StatCard
                     title={t("admin.stats.orders")}
@@ -168,10 +114,10 @@ export default function AdminDashboard() {
                             <tbody className="divide-y divide-gray-50">
                                 {recentOrders.map((order) => (
                                     <tr key={order.id} className="hover:bg-gray-50/80 transition-colors group">
-                                        <td className="p-4 pr-6 font-bold text-gray-900 group-hover:text-primary transition-colors text-start">#{order.id.slice(0, 8)}</td>
+                                        <td className="p-4 pr-6 font-bold text-gray-900 group-hover:text-primary transition-colors text-start">#{String(order.id).slice(0, 8)}</td>
                                         <td className="p-4 text-gray-600 text-start">
-                                            <div className="font-medium text-gray-900">{order.customer.name}</div>
-                                            <div className="text-xs text-gray-400 font-sans">{order.customer.phone}</div>
+                                            <div className="font-medium text-gray-900">{order.customer?.name || "-"}</div>
+                                            <div className="text-xs text-gray-400 font-sans">{order.customer?.phone || ""}</div>
                                         </td>
                                         <td className="p-4 text-start">
                                             <OrderStatusBadge status={order.status} />
@@ -200,7 +146,7 @@ function StatCard({ title, value, icon: Icon, trend, trendUp, className, iconCla
                     <Icon className="w-6 h-6" />
                 </div>
                 {trend && (
-                    <div className={cn("flex items-center text-xs font-bold px-2 py-1 rounded-full", trendUp ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
+                    <div className={cn("flex items-center text-xs font-bold px-2 py-1 rounded-full", trendUp ? "bg-brand-100 text-brand-dark" : "bg-red-100 text-red-700")}>
                         {trendUp ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <ArrowDownRight className="w-3 h-3 mr-1" />}
                         {trend}
                     </div>
@@ -217,7 +163,7 @@ function OrderStatusBadge({ status }: { status: string }) {
     const styles = {
         pending: "bg-amber-100 text-amber-700 hover:bg-amber-200",
         preparing: "bg-blue-100 text-blue-700 hover:bg-blue-200",
-        accepted: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+        accepted: "bg-brand-100 text-brand-dark hover:bg-brand-50",
         out_for_delivery: "bg-purple-100 text-purple-700 hover:bg-purple-200",
         delivered: "bg-gray-100 text-gray-700 hover:bg-gray-200",
         rejected: "bg-red-100 text-red-700 hover:bg-red-200",

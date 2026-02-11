@@ -1,109 +1,129 @@
-export type Role = 'customer' | 'cashier' | 'admin';
+export type Role = "customer" | "cashier" | "admin";
 
 export interface UserProfile {
+    id: number;
     uid: string;
-    email: string | null;
+    username: string;
+    email: string;
     displayName: string | null;
-    phoneNumber: string | null;
+    phone: string | null;
     role: Role;
-    createdAt: number; // timestamp
-}
-
-export interface VerificationRequest {
-    uid: string;
+    createdAt: string;
 }
 
 export interface Category {
-    id: string;
+    id: number;
     nameAr: string;
-    nameEn?: string; // Added
-    order: number;
+    nameEn?: string | null;
+    sortOrder: number;
+}
+
+export interface UnitPrice {
+    id: number;
+    unit: string;
+    price: number;
+    isDefault: boolean;
 }
 
 export interface Product {
-    id: string;
+    id: number;
     nameAr: string;
-    nameEn?: string; // Added
-    descriptionAr: string;
-    descriptionEn?: string; // Added
-    price: number;
-    unit: string;
-    imageUrl?: string;
-    categoryId?: string;
+    nameEn?: string | null;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    categoryId?: number | null;
+    imageUrl?: string | null;
     active: boolean;
-    createdAt: number;
-    updatedAt: number;
+    units: UnitPrice[];
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Offer {
-    id: string;
+    id: number;
     titleAr: string;
-    titleEn?: string; // Added
-    subtitleAr?: string;
-    subtitleEn?: string; // Added
-    imageUrl?: string;
+    titleEn?: string | null;
+    subtitleAr?: string | null;
+    subtitleEn?: string | null;
+    imageUrl?: string | null;
     priority: number;
     active: boolean;
-    createdAt: number;
+    createdAt: string;
 }
 
 export interface DeliveryZone {
-    id: string;
+    id: number;
     nameAr: string;
-    nameEn?: string; // Added
+    nameEn?: string | null;
     fee: number;
     active: boolean;
-    order: number;
+    sortOrder: number;
 }
 
 export interface CartItem {
-    productId: string;
+    productId: number;
     nameAr: string;
-    nameEn?: string; // Added
+    nameEn?: string | null;
     price: number;
     qty: number;
     unit: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
+    cartKey?: string;
 }
 
 export interface OrderAddress {
-    zoneId: string;
+    zoneId: number;
     zoneName: string;
     street: string;
     building: string;
     details?: string;
-    locationLink?: string; // Optional Google Maps link
+    locationLink?: string;
 }
 
-export type OrderStatus = 'pending' | 'accepted' | 'rejected' | 'preparing' | 'out_for_delivery' | 'delivered';
+export type OrderStatus =
+    | "pending"
+    | "accepted"
+    | "rejected"
+    | "preparing"
+    | "out_for_delivery"
+    | "delivered";
+
+export interface OrderItem {
+    id: number;
+    productId: number | null;
+    nameAr: string;
+    nameEn?: string | null;
+    unit: string;
+    price: number;
+    qty: number;
+    lineTotal: number;
+    imageUrl?: string | null;
+}
+
+export interface OrderStatusEntry {
+    id: number;
+    status: string;
+    changedBy?: number | null;
+    createdAt: string;
+}
 
 export interface Order {
-    id: string;
-    userId: string;
-    customer: {
+    id: number;
+    userId: number;
+    customer?: {
         name: string;
         email: string;
         phone: string;
     };
     address: OrderAddress;
-    items: CartItem[];
+    items: OrderItem[];
     subtotal: number;
     deliveryFee: number;
     total: number;
-    paymentMethod: 'COD'; // Cash On Delivery
+    paymentMethod: string;
     status: OrderStatus;
-    createdAt: number; // timestamp
-
-    // Workflow fields
-    acceptedBy?: string;
-    acceptedAt?: number;
-    rejectedBy?: string;
-    rejectedAt?: number;
-    rejectionReason?: string;
-
-    statusHistory: {
-        status: OrderStatus;
-        at: number;
-        by?: string;
-    }[];
+    rejectionReason?: string | null;
+    statusHistory: OrderStatusEntry[];
+    createdAt: string;
+    updatedAt: string;
 }
