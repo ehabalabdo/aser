@@ -31,7 +31,7 @@ export default function CashierLayout({
                         </button>
                     </div>
                 </nav>
-                <main className="h-[calc(100vh-4rem)] overflow-hidden">
+                <main className="min-h-[calc(100vh-3rem)] sm:min-h-[calc(100vh-4rem)] overflow-y-auto md:overflow-hidden">
                     {children}
                 </main>
             </div>

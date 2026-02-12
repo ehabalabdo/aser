@@ -223,7 +223,7 @@ export default function CashierDashboard() {
             </div>
 
             {/* Kanban Board */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 flex-1 no-print md:overflow-hidden md:h-[calc(100vh-160px)]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 flex-1 no-print md:overflow-hidden md:h-[calc(100vh-160px)]" style={{ minHeight: 0 }}>
 
                 {/* Column 1: New Orders */}
                 <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
@@ -234,7 +234,7 @@ export default function CashierDashboard() {
                         </h2>
                         <Badge className="bg-secondary text-white font-mono text-base sm:text-lg">{pendingOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[50vh] md:max-h-none">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 md:max-h-none">
                         {pendingOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="grid grid-cols-2 gap-2 mt-4">
@@ -271,7 +271,7 @@ export default function CashierDashboard() {
                         </h2>
                         <Badge className="bg-brand text-white font-mono text-base sm:text-lg">{inProgressOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[50vh] md:max-h-none">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 md:max-h-none">
                         {inProgressOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="space-y-2 mt-4">
@@ -321,7 +321,7 @@ export default function CashierDashboard() {
                         </h2>
                         <Badge className="bg-brown text-white font-mono text-base sm:text-lg">{deliveryOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[50vh] md:max-h-none">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 md:max-h-none">
                         {deliveryOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="mt-4">
