@@ -51,7 +51,7 @@ export default function LoginPage() {
             <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
                 <div className="text-center">
                     <img src="/logo.png" alt="Logo" className="mx-auto w-20 h-20" />
-                    <img src="/logossd.png" alt="اسر" className="mx-auto mt-3 h-14 object-contain" />
+                    <img src="/logossd.png" alt="اسر" className="mx-auto mt-3 h-24 object-contain" />
                     <h2 className="mt-4 text-3xl font-bold text-gray-900">{t("auth.login_title")}</h2>
                     <p className="mt-2 text-sm text-gray-600">
                         {t("auth.welcome_back")}
