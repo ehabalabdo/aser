@@ -15,16 +15,16 @@ export default function CashierLayout({
     const { logout } = useAuth();
     return (
         <RoleGuard allowedRoles={["cashier", "admin"]}>
-            <div className="min-h-screen bg-slate-950">
-                <nav className="bg-slate-900 border-b border-slate-800 h-16 flex items-center shadow-md justify-between">
-                    <div className="px-6 text-brand-light font-bold text-xl flex items-center gap-2">
+            <div className="min-h-screen bg-surface">
+                <nav className="bg-brand border-b border-brand-dark h-16 flex items-center shadow-md justify-between">
+                    <div className="px-6 text-white font-bold text-xl flex items-center gap-2">
                         {t("nav.cashier")}
                     </div>
                     <div className="px-6 flex items-center gap-4">
                         <LanguageSwitcher />
                         <button
                             onClick={logout}
-                            className="flex items-center gap-2 text-slate-400 hover:text-red-400 transition-colors text-sm"
+                            className="flex items-center gap-2 text-white/70 hover:text-red-300 transition-colors text-sm"
                         >
                             <LogOut className="w-5 h-5" />
                             <span className="hidden sm:inline">{t("logout")}</span>

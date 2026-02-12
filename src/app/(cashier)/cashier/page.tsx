@@ -146,31 +146,31 @@ export default function CashierDashboard() {
     // We can show minimal recent completed orders or none
     // const completedOrders = orders.filter(o => ['delivered', 'rejected'].includes(o.status)).slice(0, 5);
 
-    if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center p-8"><Loader2 className="animate-spin h-10 w-10 text-brand-light" /></div>;
+    if (loading) return <div className="min-h-screen bg-surface flex items-center justify-center p-8"><Loader2 className="animate-spin h-10 w-10 text-brand" /></div>;
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans flex flex-col gap-6">
+        <div className="min-h-screen bg-surface text-gray-800 p-6 font-sans flex flex-col gap-6">
             <audio ref={audioRef} loop preload="auto">
                 <source src="/ring.ogg" type="audio/ogg" />
                 <source src="/ring.wav" type="audio/wav" />
             </audio>
 
             {/* Header */}
-            <div className="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg no-print">
+            <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-brand-100 shadow-sm no-print">
                 <div className="flex items-center gap-3">
-                    <div className="bg-brand/10 p-2 rounded-lg">
-                        <MonitorSpeaker className="w-8 h-8 text-brand-light" />
+                    <div className="bg-brand-50 p-2 rounded-lg">
+                        <MonitorSpeaker className="w-8 h-8 text-brand" />
                     </div>
                     <div>
-                        <h1 className="font-black text-2xl tracking-wide text-white">{t("cashier.title")}</h1>
-                        <p className="text-slate-400 text-sm">{t("cashier.subtitle")}</p>
+                        <h1 className="font-black text-2xl tracking-wide text-brand-dark">{t("cashier.title")}</h1>
+                        <p className="text-brown/60 text-sm">{t("cashier.subtitle")}</p>
                     </div>
                 </div>
                 <div className="flex gap-4">
                     <Button
                         variant={soundEnabled ? "primary" : "outline"}
                         onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={cn("gap-2", soundEnabled ? "bg-brand hover:bg-brand-dark text-white" : "border-slate-700 text-slate-400 hover:bg-slate-800")}
+                        className={cn("gap-2", soundEnabled ? "bg-brand hover:bg-brand-dark text-white" : "border-brand-100 text-brown hover:bg-brand-50")}
                     >
                         {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
                         {soundEnabled ? t("cashier.sound_on") : t("cashier.sound_off")}
@@ -182,27 +182,27 @@ export default function CashierDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 no-print overflow-hidden h-[calc(100vh-160px)]">
 
                 {/* Column 1: New Orders */}
-                <div className="flex flex-col bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
-                    <div className="p-4 bg-amber-500/10 border-b border-amber-500/20 flex justify-between items-center backdrop-blur-sm">
-                        <h2 className="font-bold text-xl text-amber-500 flex items-center gap-2">
+                <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
+                    <div className="p-4 bg-secondary/10 border-b border-secondary/20 flex justify-between items-center">
+                        <h2 className="font-bold text-xl text-secondary flex items-center gap-2">
                             <AlertCircle className="w-6 h-6 animate-pulse" />
                             {t("cashier.new_orders")}
                         </h2>
-                        <Badge className="bg-amber-500 text-white font-mono text-lg">{pendingOrders.length}</Badge>
+                        <Badge className="bg-secondary text-white font-mono text-lg">{pendingOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {pendingOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="grid grid-cols-2 gap-2 mt-4">
                                     <Button
                                         variant="outline"
-                                        className="border-red-500/50 text-red-500 hover:bg-red-950 w-full"
+                                        className="border-red-400 text-red-600 hover:bg-red-50 w-full"
                                         onClick={() => setRejectOrderId(order.id)}
                                     >
                                         {t("cashier.reject")}
                                     </Button>
                                     <Button
-                                        className="bg-brand hover:bg-brand-dark text-white animate-pulse w-full shadow-lg shadow-brand-dark/50"
+                                        className="bg-brand hover:bg-brand-dark text-white animate-pulse w-full shadow-lg shadow-brand/30"
                                         onClick={() => handleUpdateStatus(order.id, 'accepted')}
                                     >
                                         {t("cashier.accept")}
@@ -211,7 +211,7 @@ export default function CashierDashboard() {
                             } />
                         ))}
                         {pendingOrders.length === 0 && (
-                            <div className="text-center py-10 text-slate-600">
+                            <div className="text-center py-10 text-brown/40">
                                 <p>{t("cashier.empty_new")}</p>
                             </div>
                         )}
@@ -219,22 +219,22 @@ export default function CashierDashboard() {
                 </div>
 
                 {/* Column 2: In Progress */}
-                <div className="flex flex-col bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
-                    <div className="p-4 bg-blue-500/10 border-b border-blue-500/20 flex justify-between items-center backdrop-blur-sm">
-                        <h2 className="font-bold text-xl text-blue-400 flex items-center gap-2">
+                <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
+                    <div className="p-4 bg-brand-50 border-b border-brand-100 flex justify-between items-center">
+                        <h2 className="font-bold text-xl text-brand flex items-center gap-2">
                             <Package className="w-6 h-6" />
                             {t("cashier.preparing")}
                         </h2>
-                        <Badge className="bg-blue-600 text-white font-mono text-lg">{inProgressOrders.length}</Badge>
+                        <Badge className="bg-brand text-white font-mono text-lg">{inProgressOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {inProgressOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="space-y-2 mt-4">
                                     <div className="grid grid-cols-2 gap-2">
                                         <Button
                                             variant="secondary"
-                                            className="bg-slate-700 hover:bg-slate-600"
+                                            className="bg-brand-50 hover:bg-brand-100 text-brand-dark"
                                             onClick={() => handlePrint(order)}
                                         >
                                             <Printer className="w-4 h-4 mr-2" />
@@ -242,14 +242,14 @@ export default function CashierDashboard() {
                                         </Button>
                                         {order.status === 'accepted' ? (
                                             <Button
-                                                className="bg-blue-600 hover:bg-blue-500 text-white"
+                                                className="bg-brand hover:bg-brand-dark text-white"
                                                 onClick={() => handleUpdateStatus(order.id, 'preparing')}
                                             >
                                                 {t("cashier.start_preparing")}
                                             </Button>
                                         ) : (
                                             <Button
-                                                className="bg-amber-600 hover:bg-amber-500 text-white"
+                                                className="bg-secondary hover:bg-secondary-hover text-white"
                                                 onClick={() => handleUpdateStatus(order.id, 'out_for_delivery')}
                                             >
                                                 <Truck className="w-4 h-4 mr-2" />
@@ -261,7 +261,7 @@ export default function CashierDashboard() {
                             } />
                         ))}
                         {inProgressOrders.length === 0 && (
-                            <div className="text-center py-10 text-slate-600">
+                            <div className="text-center py-10 text-brown/40">
                                 <p>{t("cashier.empty_progress")}</p>
                             </div>
                         )}
@@ -269,20 +269,20 @@ export default function CashierDashboard() {
                 </div>
 
                 {/* Column 3: Out for Delivery */}
-                <div className="flex flex-col bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
-                    <div className="p-4 bg-purple-500/10 border-b border-purple-500/20 flex justify-between items-center backdrop-blur-sm">
-                        <h2 className="font-bold text-xl text-purple-400 flex items-center gap-2">
+                <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
+                    <div className="p-4 bg-warm-tan/20 border-b border-warm-tan/30 flex justify-between items-center">
+                        <h2 className="font-bold text-xl text-brown flex items-center gap-2">
                             <Truck className="w-6 h-6" />
                             {t("cashier.delivery")}
                         </h2>
-                        <Badge className="bg-purple-600 text-white font-mono text-lg">{deliveryOrders.length}</Badge>
+                        <Badge className="bg-brown text-white font-mono text-lg">{deliveryOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {deliveryOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="mt-4">
                                     <Button
-                                        className="w-full bg-brand hover:bg-brand-dark text-white shadow-lg shadow-brand-dark/50"
+                                        className="w-full bg-brand hover:bg-brand-dark text-white shadow-lg shadow-brand/30"
                                         onClick={() => handleUpdateStatus(order.id, 'delivered')}
                                     >
                                         <Home className="w-4 h-4 mr-2" />
@@ -292,7 +292,7 @@ export default function CashierDashboard() {
                             } />
                         ))}
                         {deliveryOrders.length === 0 && (
-                            <div className="text-center py-10 text-slate-600">
+                            <div className="text-center py-10 text-brown/40">
                                 <p>{t("cashier.empty_delivery")}</p>
                             </div>
                         )}
@@ -305,18 +305,18 @@ export default function CashierDashboard() {
 
             {/* Reject Modal */}
             {rejectOrderId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm no-print">
-                    <div className="bg-slate-900 p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
-                        <h3 className="font-bold text-2xl mb-6 text-white">{t("cashier.reject_modal_title")}</h3>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm no-print">
+                    <div className="bg-white p-8 rounded-2xl w-full max-w-md border border-brand-100 shadow-2xl">
+                        <h3 className="font-bold text-2xl mb-6 text-brand-dark">{t("cashier.reject_modal_title")}</h3>
                         <textarea
-                            className="w-full bg-slate-800 border-slate-700 text-white p-4 rounded-xl mb-6 focus:ring-2 focus:ring-red-500 outline-none"
+                            className="w-full bg-surface border border-brand-100 text-gray-800 p-4 rounded-xl mb-6 focus:ring-2 focus:ring-red-400 outline-none"
                             placeholder={t("cashier.reject_reason_placeholder")}
                             rows={3}
                             value={rejectReason}
                             onChange={e => setRejectReason(e.target.value)}
                         />
                         <div className="flex justify-end gap-3">
-                            <Button variant="ghost" onClick={() => setRejectOrderId(null)} className="text-slate-400 hover:text-white hover:bg-slate-800">{t("common.cancel")}</Button>
+                            <Button variant="ghost" onClick={() => setRejectOrderId(null)} className="text-brown hover:text-brand-dark hover:bg-brand-50">{t("common.cancel")}</Button>
                             <Button variant="danger" onClick={() => handleUpdateStatus(rejectOrderId, 'rejected', rejectReason)} className="bg-red-600 hover:bg-red-500">{t("cashier.confirm_reject")}</Button>
                         </div>
                     </div>
@@ -388,50 +388,50 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
     const { t, language } = useLanguage();
 
     return (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+        <div className="bg-surface border border-brand-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
             {/* Decorator Line */}
             <div className={cn("absolute top-0 left-0 bottom-0 w-1",
-                order.status === 'pending' ? "bg-amber-500" :
-                    order.status === 'accepted' ? "bg-blue-500" :
-                        order.status === 'preparing' ? "bg-blue-400" :
-                            order.status === 'out_for_delivery' ? "bg-purple-500" : "bg-slate-500"
+                order.status === 'pending' ? "bg-secondary" :
+                    order.status === 'accepted' ? "bg-brand" :
+                        order.status === 'preparing' ? "bg-brand-light" :
+                            order.status === 'out_for_delivery' ? "bg-warm-tan" : "bg-brown/30"
             )} />
 
             <div className="mr-3">
                 <div className="flex justify-between items-start mb-3">
-                    <span className="font-mono font-bold text-slate-300 text-lg">#{order.id}</span>
-                    <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
+                    <span className="font-mono font-bold text-brand-dark text-lg">#{order.id}</span>
+                    <span className="text-xs text-brown/60 flex items-center gap-1 font-mono">
                         <Clock className="w-3 h-3" />
                         {new Date(order.createdAt).toLocaleTimeString(language === 'ar' ? 'ar-JO' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                 </div>
 
                 <div className="mb-3">
-                    <h3 className="font-bold text-white text-lg mb-1">{order.customer?.name || 'غير معروف'}</h3>
-                    <div className="flex items-center gap-2 text-slate-400 text-sm">
-                        <MapPin className="w-3 h-3 text-brand-light" />
+                    <h3 className="font-bold text-gray-800 text-lg mb-1">{order.customer?.name || 'غير معروف'}</h3>
+                    <div className="flex items-center gap-2 text-brown/60 text-sm">
+                        <MapPin className="w-3 h-3 text-brand" />
                         {order.address.zoneName} - {order.address.street}
                     </div>
                 </div>
 
-                <div className="bg-slate-900/50 rounded-lg p-3 mb-3 border border-slate-700/50">
-                    <div className="flex justify-between items-center mb-2 text-xs text-slate-500 uppercase font-bold">
+                <div className="bg-white rounded-lg p-3 mb-3 border border-brand-100">
+                    <div className="flex justify-between items-center mb-2 text-xs text-brown/50 uppercase font-bold">
                         <span>{t("cashier.receipt.product")}</span>
                         <span>{t("common.quantity")}</span>
                     </div>
                     <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
                         {order.items.map((item, idx) => (
                             <div key={idx} className="flex justify-between text-sm">
-                                <span className="text-slate-200">{language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}</span>
-                                <span className="font-mono text-brand-light font-bold">x{item.qty}</span>
+                                <span className="text-gray-700">{language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}</span>
+                                <span className="font-mono text-brand font-bold">x{item.qty}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
-                    <span className="text-slate-400 text-sm">{t("common.total")}:</span>
-                    <span className="font-bold text-xl text-brand-light font-mono">{order.total.toFixed(2)} {t("common.currency")}</span>
+                <div className="flex justify-between items-center pt-2 border-t border-brand-100">
+                    <span className="text-brown/60 text-sm">{t("common.total")}:</span>
+                    <span className="font-bold text-xl text-brand font-mono">{order.total.toFixed(2)} {t("common.currency")}</span>
                 </div>
 
                 {actions}
