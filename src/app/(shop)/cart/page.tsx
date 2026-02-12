@@ -128,20 +128,20 @@ export default function CartPage() {
     }
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 pb-4 lg:pb-20">
             {/* Cart Items */}
             <div className="lg:col-span-8 space-y-4">
-                <div className="flex items-center gap-4 mb-2">
+                <div className="flex items-center gap-3 sm:gap-4 mb-2">
                     <button
                         onClick={() => router.back()}
-                        className="p-3 bg-white hover:bg-gray-50 rounded-full shadow-sm border border-gray-100 transition-colors group"
+                        className="p-2 sm:p-3 bg-white hover:bg-gray-50 rounded-full shadow-sm border border-gray-100 transition-colors group"
                         aria-label="Back"
                     >
-                        <ChevronLeft className="w-6 h-6 text-gray-400 group-hover:text-primary transition-colors" />
+                        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-primary transition-colors" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">{t("cart.title")}</h1>
-                        <p className="text-gray-500 text-sm">{t("cart.items_count", { count: items.length })}</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{t("cart.title")}</h1>
+                        <p className="text-gray-500 text-xs sm:text-sm">{t("cart.items_count", { count: items.length })}</p>
                     </div>
                 </div>
 
@@ -149,8 +149,8 @@ export default function CartPage() {
                     {items.map((item) => {
                         const itemKey = item.cartKey || String(item.productId);
                         return (
-                        <Card key={itemKey} className="flex flex-row items-center p-3 sm:p-4 gap-4 hover:shadow-md transition-shadow">
-                            <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                        <Card key={itemKey} className="flex flex-row items-center p-2.5 sm:p-4 gap-2.5 sm:gap-4 hover:shadow-md transition-shadow">
+                            <div className="relative w-16 h-16 sm:w-24 sm:h-24 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
                                 {item.imageUrl ? (
                                     <Image src={item.imageUrl} alt={item.nameAr} fill className="object-cover" />
                                 ) : (
@@ -161,36 +161,36 @@ export default function CartPage() {
                             <div className="flex-1 flex flex-col justify-between self-stretch py-1">
                                 <div>
                                     <div className="flex justify-between items-start">
-                                        <h3 className="font-bold text-gray-900 text-lg">
+                                        <h3 className="font-bold text-gray-900 text-sm sm:text-lg line-clamp-1">
                                             {language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}
                                         </h3>
                                         <button onClick={() => removeItem(itemKey)} className="text-gray-400 hover:text-danger transition-colors p-1">
                                             <Trash2 className="w-5 h-5" />
                                         </button>
                                     </div>
-                                    <p className="text-primary font-bold text-sm bg-brand-50 w-fit px-2 py-0.5 rounded-md mt-1">
+                                    <p className="text-primary font-bold text-xs sm:text-sm bg-brand-50 w-fit px-2 py-0.5 rounded-md mt-0.5 sm:mt-1">
                                         {item.price.toFixed(2)} {t("common.currency")} <span className="text-gray-400 font-normal">/ {language === 'en' ? (UNIT_LABELS_EN[item.unit] || item.unit) : (UNIT_LABELS_AR[item.unit] || item.unit)}</span>
                                     </p>
                                 </div>
 
-                                <div className="flex items-center justify-between mt-2">
-                                    <div className="flex items-center bg-gray-50 rounded-lg p-1 border border-gray-200">
+                                <div className="flex items-center justify-between mt-1.5 sm:mt-2">
+                                    <div className="flex items-center bg-gray-50 rounded-lg p-0.5 sm:p-1 border border-gray-200">
                                         <button
                                             onClick={() => updateQuantity(itemKey, item.qty - 1)}
-                                            className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-danger transition-colors disabled:opacity-50"
+                                            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-danger transition-colors disabled:opacity-50"
                                             disabled={item.qty <= 1}
                                         >
-                                            <Minus className="w-4 h-4" />
+                                            <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         </button>
-                                        <span className="w-10 text-center font-bold text-gray-900 font-ibm">{item.qty}</span>
+                                        <span className="w-8 sm:w-10 text-center font-bold text-gray-900 text-sm sm:text-base font-ibm">{item.qty}</span>
                                         <button
                                             onClick={() => updateQuantity(itemKey, item.qty + 1)}
-                                            className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-primary transition-colors"
+                                            className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-600 hover:text-primary transition-colors"
                                         >
-                                            <Plus className="w-4 h-4" />
+                                            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         </button>
                                     </div>
-                                    <span className="font-bold text-gray-900 text-lg">{(item.price * item.qty).toFixed(2)} {t("common.currency")}</span>
+                                    <span className="font-bold text-gray-900 text-sm sm:text-lg">{(item.price * item.qty).toFixed(2)} {t("common.currency")}</span>
                                 </div>
                             </div>
                         </Card>

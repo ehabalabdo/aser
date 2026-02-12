@@ -29,17 +29,17 @@ export function Header() {
     }, []);
 
     return (
-        <header className="bg-white shadow-sm sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
+        <header className="bg-white shadow-sm sticky top-0 z-40 safe-top">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-14 sm:h-16">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2">
-                        <img src="/logo.png" alt={t("app.name")} className="w-10 h-10" />
-                        <span className="text-2xl font-bold text-brand">{t("app.name")}</span>
+                    <Link href="/" className="flex items-center gap-1.5 sm:gap-2">
+                        <img src="/logo.png" alt={t("app.name")} className="w-8 h-8 sm:w-10 sm:h-10" />
+                        <span className="text-lg sm:text-2xl font-bold text-brand">{t("app.name")}</span>
                     </Link>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         <LanguageSwitcher />
 
                         {profile?.role === 'admin' && (
@@ -54,10 +54,10 @@ export function Header() {
                             </Link>
                         )}
 
-                        <Link href="/cart" className="relative p-2 text-gray-600 hover:text-brand transition-colors">
-                            <ShoppingCart className="w-6 h-6" />
+                        <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-600 hover:text-brand transition-colors">
+                            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                             {cartCount > 0 && (
-                                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                                <span className="absolute -top-1 -right-1 sm:top-0 sm:right-0 inline-flex items-center justify-center w-5 h-5 sm:w-auto sm:h-auto sm:px-2 sm:py-1 text-[10px] sm:text-xs font-bold leading-none text-white bg-red-600 rounded-full">
                                     {cartCount}
                                 </span>
                             )}
@@ -65,12 +65,12 @@ export function Header() {
 
                         {user ? (
                             <div className="relative" ref={menuRef}>
-                                <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 text-gray-700 hover:text-brand">
-                                    <User className="w-6 h-6" />
+                                <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-1.5 text-gray-700 hover:text-brand">
+                                    <User className="w-5 h-5 sm:w-6 sm:h-6" />
                                     <span className="hidden sm:inline text-sm font-medium">{profile?.displayName || t("nav.users")}</span>
                                 </button>
                                 {menuOpen && (
-                                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100 z-50">
+                                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100 z-50">
                                         {profile?.role === 'admin' && (
                                             <Link href="/admin" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 sm:hidden">{t("nav.admin")}</Link>
                                         )}

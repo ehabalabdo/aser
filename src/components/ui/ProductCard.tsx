@@ -82,27 +82,27 @@ export default function ProductCard({ product }: { product: Product }) {
                 </div>
             </div>
 
-            <CardContent className="p-4 flex-1 flex flex-col gap-2">
+            <CardContent className="p-3 sm:p-4 flex-1 flex flex-col gap-1.5 sm:gap-2">
                 <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1 text-lg">
+                    <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1 text-sm sm:text-lg">
                         {language === 'en' ? (product.nameEn || product.nameAr) : product.nameAr}
                     </h3>
                 </div>
                 {(product.descriptionAr || product.descriptionEn) && (
-                    <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
+                    <p className="text-xs sm:text-sm text-gray-500 line-clamp-2 min-h-[2rem] sm:min-h-[2.5rem]">
                         {language === 'en' ? (product.descriptionEn || product.descriptionAr) : product.descriptionAr}
                     </p>
                 )}
 
                 {/* Unit selector - only show if multiple units */}
                 {availableUnits.length > 1 && (
-                    <div className="flex gap-1.5 flex-wrap mt-1">
+                    <div className="flex gap-1 sm:gap-1.5 flex-wrap mt-1">
                         {availableUnits.map(u => (
                             <button
                                 key={u.unit}
                                 onClick={() => setSelectedUnit(u.unit)}
                                 className={cn(
-                                    "text-xs px-3 py-1.5 rounded-full border transition-all font-medium",
+                                    "text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border transition-all font-medium",
                                     selectedUnit === u.unit
                                         ? "bg-brand text-white border-brand shadow-sm"
                                         : "bg-white text-gray-600 border-gray-200 hover:border-brand-light hover:text-brand-dark"
@@ -115,7 +115,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 )}
             </CardContent>
 
-            <CardFooter className="p-4 pt-0">
+            <CardFooter className="p-3 sm:p-4 pt-0">
                 {cartItem ? (
                     <div className="flex items-center justify-between w-full bg-brand-50 rounded-lg p-1 border border-brand-100">
                         <Button

@@ -74,6 +74,24 @@ h6 {
   }
 }
 
+/* Mobile helpers */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent iOS zoom on inputs */
+input, select, textarea {
+  font-size: 16px !important;
+}
+@media (min-width: 640px) {
+  input, select, textarea {
+    font-size: inherit !important;
+  }
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {

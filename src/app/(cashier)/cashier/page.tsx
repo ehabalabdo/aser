@@ -176,7 +176,7 @@ export default function CashierDashboard() {
     if (loading) return <div className="min-h-screen bg-surface flex items-center justify-center p-8"><Loader2 className="animate-spin h-10 w-10 text-brand" /></div>;
 
     return (
-        <div className="min-h-screen bg-surface text-gray-800 p-6 font-sans flex flex-col gap-6">
+        <div className="min-h-screen bg-surface text-gray-800 p-3 sm:p-6 font-sans flex flex-col gap-3 sm:gap-6">
             <audio ref={audioRef} loop preload="auto">
                 <source src="/notify.mp3" type="audio/mpeg" />
                 <source src="/notify.wav" type="audio/wav" />
@@ -206,14 +206,14 @@ export default function CashierDashboard() {
             )}
 
             {/* Header */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-brand-100 shadow-sm no-print">
-                <div className="flex items-center gap-3">
-                    <div className="bg-brand-50 p-2 rounded-lg">
-                        <MonitorSpeaker className="w-8 h-8 text-brand" />
+            <div className="flex justify-between items-center bg-white p-3 sm:p-4 rounded-2xl border border-brand-100 shadow-sm no-print">
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="bg-brand-50 p-1.5 sm:p-2 rounded-lg">
+                        <MonitorSpeaker className="w-6 h-6 sm:w-8 sm:h-8 text-brand" />
                     </div>
                     <div>
-                        <h1 className="font-black text-2xl tracking-wide text-brand-dark">{t("cashier.title")}</h1>
-                        <p className="text-brown/60 text-sm">{t("cashier.subtitle")}</p>
+                        <h1 className="font-black text-lg sm:text-2xl tracking-wide text-brand-dark">{t("cashier.title")}</h1>
+                        <p className="text-brown/60 text-xs sm:text-sm">{t("cashier.subtitle")}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 text-brand-light text-sm">
@@ -223,18 +223,18 @@ export default function CashierDashboard() {
             </div>
 
             {/* Kanban Board */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 no-print overflow-hidden h-[calc(100vh-160px)]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 flex-1 no-print md:overflow-hidden md:h-[calc(100vh-160px)]">
 
                 {/* Column 1: New Orders */}
                 <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
-                    <div className="p-4 bg-secondary/10 border-b border-secondary/20 flex justify-between items-center">
-                        <h2 className="font-bold text-xl text-secondary flex items-center gap-2">
-                            <AlertCircle className="w-6 h-6 animate-pulse" />
+                    <div className="p-3 sm:p-4 bg-secondary/10 border-b border-secondary/20 flex justify-between items-center">
+                        <h2 className="font-bold text-base sm:text-xl text-secondary flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 animate-pulse" />
                             {t("cashier.new_orders")}
                         </h2>
-                        <Badge className="bg-secondary text-white font-mono text-lg">{pendingOrders.length}</Badge>
+                        <Badge className="bg-secondary text-white font-mono text-base sm:text-lg">{pendingOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[50vh] md:max-h-none">
                         {pendingOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="grid grid-cols-2 gap-2 mt-4">
@@ -264,14 +264,14 @@ export default function CashierDashboard() {
 
                 {/* Column 2: In Progress */}
                 <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
-                    <div className="p-4 bg-brand-50 border-b border-brand-100 flex justify-between items-center">
-                        <h2 className="font-bold text-xl text-brand flex items-center gap-2">
-                            <Package className="w-6 h-6" />
+                    <div className="p-3 sm:p-4 bg-brand-50 border-b border-brand-100 flex justify-between items-center">
+                        <h2 className="font-bold text-base sm:text-xl text-brand flex items-center gap-2">
+                            <Package className="w-5 h-5 sm:w-6 sm:h-6" />
                             {t("cashier.preparing")}
                         </h2>
-                        <Badge className="bg-brand text-white font-mono text-lg">{inProgressOrders.length}</Badge>
+                        <Badge className="bg-brand text-white font-mono text-base sm:text-lg">{inProgressOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[50vh] md:max-h-none">
                         {inProgressOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="space-y-2 mt-4">
@@ -314,14 +314,14 @@ export default function CashierDashboard() {
 
                 {/* Column 3: Out for Delivery */}
                 <div className="flex flex-col bg-white rounded-2xl border border-brand-100 overflow-hidden shadow-sm">
-                    <div className="p-4 bg-warm-tan/20 border-b border-warm-tan/30 flex justify-between items-center">
-                        <h2 className="font-bold text-xl text-brown flex items-center gap-2">
-                            <Truck className="w-6 h-6" />
+                    <div className="p-3 sm:p-4 bg-warm-tan/20 border-b border-warm-tan/30 flex justify-between items-center">
+                        <h2 className="font-bold text-base sm:text-xl text-brown flex items-center gap-2">
+                            <Truck className="w-5 h-5 sm:w-6 sm:h-6" />
                             {t("cashier.delivery")}
                         </h2>
-                        <Badge className="bg-brown text-white font-mono text-lg">{deliveryOrders.length}</Badge>
+                        <Badge className="bg-brown text-white font-mono text-base sm:text-lg">{deliveryOrders.length}</Badge>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[50vh] md:max-h-none">
                         {deliveryOrders.map(order => (
                             <OrderCard key={order.id} order={order} actions={
                                 <div className="mt-4">
@@ -349,9 +349,9 @@ export default function CashierDashboard() {
 
             {/* Reject Modal */}
             {rejectOrderId && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm no-print">
-                    <div className="bg-white p-8 rounded-2xl w-full max-w-md border border-brand-100 shadow-2xl">
-                        <h3 className="font-bold text-2xl mb-6 text-brand-dark">{t("cashier.reject_modal_title")}</h3>
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm no-print">
+                    <div className="bg-white p-6 sm:p-8 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md border border-brand-100 shadow-2xl">
+                        <h3 className="font-bold text-xl sm:text-2xl mb-4 sm:mb-6 text-brand-dark">{t("cashier.reject_modal_title")}</h3>
                         <textarea
                             className="w-full bg-surface border border-brand-100 text-gray-800 p-4 rounded-xl mb-6 focus:ring-2 focus:ring-red-400 outline-none"
                             placeholder={t("cashier.reject_reason_placeholder")}
@@ -432,7 +432,7 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
     const { t, language } = useLanguage();
 
     return (
-        <div className="bg-surface border border-brand-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+        <div className="bg-surface border border-brand-100 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
             {/* Decorator Line */}
             <div className={cn("absolute top-0 left-0 bottom-0 w-1",
                 order.status === 'pending' ? "bg-secondary" :
@@ -442,40 +442,40 @@ function OrderCard({ order, actions }: { order: Order, actions: React.ReactNode 
             )} />
 
             <div className="mr-3">
-                <div className="flex justify-between items-start mb-3">
-                    <span className="font-mono font-bold text-brand-dark text-lg">#{order.id}</span>
-                    <span className="text-xs text-brown/60 flex items-center gap-1 font-mono">
+                <div className="flex justify-between items-start mb-2 sm:mb-3">
+                    <span className="font-mono font-bold text-brand-dark text-base sm:text-lg">#{order.id}</span>
+                    <span className="text-[10px] sm:text-xs text-brown/60 flex items-center gap-1 font-mono">
                         <Clock className="w-3 h-3" />
                         {new Date(order.createdAt).toLocaleTimeString(language === 'ar' ? 'ar-JO' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                 </div>
 
-                <div className="mb-3">
-                    <h3 className="font-bold text-gray-800 text-lg mb-1">{order.customer?.name || 'غير معروف'}</h3>
-                    <div className="flex items-center gap-2 text-brown/60 text-sm">
+                <div className="mb-2 sm:mb-3">
+                    <h3 className="font-bold text-gray-800 text-base sm:text-lg mb-0.5 sm:mb-1">{order.customer?.name || 'غير معروف'}</h3>
+                    <div className="flex items-center gap-2 text-brown/60 text-xs sm:text-sm">
                         <MapPin className="w-3 h-3 text-brand" />
                         {order.address.zoneName} - {order.address.street}
                     </div>
                 </div>
 
-                <div className="bg-white rounded-lg p-3 mb-3 border border-brand-100">
-                    <div className="flex justify-between items-center mb-2 text-xs text-brown/50 uppercase font-bold">
+                <div className="bg-white rounded-lg p-2 sm:p-3 mb-2 sm:mb-3 border border-brand-100">
+                    <div className="flex justify-between items-center mb-1.5 sm:mb-2 text-[10px] sm:text-xs text-brown/50 uppercase font-bold">
                         <span>{t("cashier.receipt.product")}</span>
                         <span>{t("common.quantity")}</span>
                     </div>
-                    <div className="space-y-1 max-h-24 overflow-y-auto custom-scrollbar">
+                    <div className="space-y-0.5 sm:space-y-1 max-h-20 sm:max-h-24 overflow-y-auto custom-scrollbar">
                         {order.items.map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-sm">
-                                <span className="text-gray-700">{language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}</span>
-                                <span className="font-mono text-brand font-bold">x{item.qty}</span>
+                            <div key={idx} className="flex justify-between text-xs sm:text-sm">
+                                <span className="text-gray-700 line-clamp-1">{language === 'en' ? (item.nameEn || item.nameAr) : item.nameAr}</span>
+                                <span className="font-mono text-brand font-bold flex-shrink-0 mr-1 sm:mr-0">x{item.qty}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 <div className="flex justify-between items-center pt-2 border-t border-brand-100">
-                    <span className="text-brown/60 text-sm">{t("common.total")}:</span>
-                    <span className="font-bold text-xl text-brand font-mono">{order.total.toFixed(2)} {t("common.currency")}</span>
+                    <span className="text-brown/60 text-xs sm:text-sm">{t("common.total")}:</span>
+                    <span className="font-bold text-lg sm:text-xl text-brand font-mono">{order.total.toFixed(2)} {t("common.currency")}</span>
                 </div>
 
                 {actions}

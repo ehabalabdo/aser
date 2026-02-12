@@ -19,6 +19,13 @@ const ibmPlex = IBM_Plex_Sans_Arabic({
 export const metadata: Metadata = {
   title: "Asr",
   description: "Fresh vegetables delivered to your doorstep",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
+  themeColor: "#215732",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "أسر",
+  },
 };
 
 export default function RootLayout({

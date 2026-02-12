@@ -68,7 +68,7 @@ export default function HomePage() {
     return (
         <div className="space-y-8 pb-20">
             {/* Search Bar - Sticky on Mobile */}
-            <div className="md:hidden sticky top-16 z-30 bg-white/95 backdrop-blur-md px-4 py-3 shadow-sm -mx-4">
+            <div className="md:hidden sticky top-14 z-30 bg-white/95 backdrop-blur-md px-3 py-2 shadow-sm -mx-4">
                 <div className="relative">
                     <Search className="absolute top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 rtl:right-3 rtl:left-auto ltr:left-3 ltr:right-auto" />
                     <Input
@@ -98,21 +98,21 @@ export default function HomePage() {
 
             {/* Hero Section (Offers Slider) */}
             {offers.length > 0 && (
-                <section className="relative rounded-3xl overflow-hidden shadow-lg aspect-[21/9] md:aspect-[21/7]">
+                <section className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg aspect-[16/9] sm:aspect-[21/9] md:aspect-[21/7]">
                     <div className="absolute inset-0 transition-transform duration-700 ease-out flex" style={{ transform: `translateX(${currentSlide * 100}%)`, direction: 'ltr' }}>
                         {/* Note: Direction LTR is needed for transform translateX logic to work predictably, but content is RTL */}
                         {offers.map((offer, index) => (
                             <div key={offer.id} className="relative min-w-full h-full" dir="rtl">
                                 {offer.imageUrl && <Image src={offer.imageUrl} alt={offer.titleAr} fill className="object-cover" priority={index === 0} />}
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent flex flex-col justify-center px-6 md:px-12 text-white">
-                                    <Badge className="w-fit mb-4 bg-accent text-black font-bold animate-fade-in">{t("home.featured")}</Badge>
-                                    <h2 className="text-3xl md:text-5xl font-black mb-2 max-w-lg leading-tight animate-fade-in">
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent flex flex-col justify-center px-4 sm:px-6 md:px-12 text-white">
+                                    <Badge className="w-fit mb-2 sm:mb-4 bg-accent text-black font-bold animate-fade-in text-xs sm:text-sm">{t("home.featured")}</Badge>
+                                    <h2 className="text-xl sm:text-3xl md:text-5xl font-black mb-1 sm:mb-2 max-w-lg leading-tight animate-fade-in">
                                         {language === 'en' ? (offer.titleEn || offer.titleAr) : offer.titleAr}
                                     </h2>
-                                    <p className="text-lg md:text-xl opacity-90 max-w-md animate-fade-in" style={{ animationDelay: '100ms' }}>
+                                    <p className="text-sm sm:text-lg md:text-xl opacity-90 max-w-md animate-fade-in line-clamp-2" style={{ animationDelay: '100ms' }}>
                                         {language === 'en' ? (offer.subtitleEn || offer.subtitleAr) : offer.subtitleAr}
                                     </p>
-                                    <Button className="w-fit mt-6 bg-white text-black hover:bg-white/90 font-bold" size="lg">{t("cart.shopping_continue")}</Button>
+                                    <Button className="w-fit mt-3 sm:mt-6 bg-white text-black hover:bg-white/90 font-bold text-sm sm:text-base" size="lg">{t("cart.shopping_continue")}</Button>
                                 </div>
                             </div>
                         ))}
@@ -132,23 +132,23 @@ export default function HomePage() {
             )}
 
             {/* Categories Horizontal Scroll */}
-            <section className="-mx-4 space-y-4">
+            <section className="-mx-4 space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between px-4">
-                    <h2 className="text-xl font-bold text-gray-900">{t("home.categories")}</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">{t("home.categories")}</h2>
                     <button className="text-sm text-primary font-medium hover:underline">{t("common.filter_all")}</button>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x">
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x">
                     <button
                         onClick={() => setSelectedCategory("all")}
                         className={cn(
-                            "flex-none snap-start flex flex-col items-center gap-2 min-w-[5rem] group",
+                            "flex-none snap-start flex flex-col items-center gap-1.5 sm:gap-2 min-w-[4rem] sm:min-w-[5rem] group",
                         )}
                     >
-                        <div className={cn("w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-sm border",
+                        <div className={cn("w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all shadow-sm border",
                             selectedCategory === "all" ? "bg-primary text-white border-primary ring-4 ring-primary/10" : "bg-white text-gray-500 border-gray-100 group-hover:border-primary/50")}>
-                            <SlidersHorizontal className="w-6 h-6" />
+                            <SlidersHorizontal className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <span className={cn("text-sm font-medium transition-colors", selectedCategory === "all" ? "text-primary" : "text-gray-600")}>{t("common.filter_all")}</span>
+                        <span className={cn("text-xs sm:text-sm font-medium transition-colors", selectedCategory === "all" ? "text-primary" : "text-gray-600")}>{t("common.filter_all")}</span>
                     </button>
 
                     {categories.map((cat) => (
@@ -156,14 +156,14 @@ export default function HomePage() {
                             key={cat.id}
                             onClick={() => setSelectedCategory(String(cat.id))}
                             className={cn(
-                                "flex-none snap-start flex flex-col items-center gap-2 min-w-[5rem] group",
+                                "flex-none snap-start flex flex-col items-center gap-1.5 sm:gap-2 min-w-[4rem] sm:min-w-[5rem] group",
                             )}
                         >
-                            <div className={cn("w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-sm border overflow-hidden relative",
+                            <div className={cn("w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all shadow-sm border overflow-hidden relative",
                                 selectedCategory === String(cat.id) ? "bg-primary text-white border-primary ring-4 ring-primary/10" : "bg-white text-gray-500 border-gray-100 group-hover:border-primary/50")}>
                                 <span className="text-2xl">🥬</span>
                             </div>
-                            <span className={cn("text-sm font-medium transition-colors", selectedCategory === String(cat.id) ? "text-primary" : "text-gray-600")}>
+                            <span className={cn("text-xs sm:text-sm font-medium transition-colors", selectedCategory === String(cat.id) ? "text-primary" : "text-gray-600")}>
                                 {language === 'en' ? (cat.nameEn || cat.nameAr) : cat.nameAr}
                             </span>
                         </button>
@@ -174,7 +174,7 @@ export default function HomePage() {
             {/* Products Grid */}
             <section>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-gray-900">{t("home.featured")}</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">{t("home.featured")}</h2>
                     <div className="flex gap-2">
                         <button className="p-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"><ChevronRight className="w-5 h-5 rtl:rotate-180" /></button>
                         <button className="p-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"><ChevronLeft className="w-5 h-5 rtl:rotate-180" /></button>
@@ -188,7 +188,7 @@ export default function HomePage() {
                         <p className="text-gray-500">{t("home.search_placeholder")}</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
                         {filteredProducts.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
