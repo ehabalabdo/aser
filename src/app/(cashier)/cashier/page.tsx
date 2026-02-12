@@ -13,8 +13,10 @@ export default function CashierDashboard() {
     const { t, language } = useLanguage();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [soundEnabled, setSoundEnabled] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState(true);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const prevPendingIdsRef = useRef<Set<number>>(new Set());
+    const audioUnlockedRef = useRef(false);
 
     const { user } = useAuth();
 
@@ -22,6 +24,27 @@ export default function CashierDashboard() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [rejectOrderId, setRejectOrderId] = useState<number | null>(null);
     const [rejectReason, setRejectReason] = useState("");
+
+    // Unlock audio on first user interaction (browser autoplay policy)
+    useEffect(() => {
+        const unlock = () => {
+            if (!audioUnlockedRef.current && audioRef.current) {
+                audioRef.current.muted = true;
+                audioRef.current.play().then(() => {
+                    audioRef.current!.pause();
+                    audioRef.current!.muted = false;
+                    audioRef.current!.currentTime = 0;
+                    audioUnlockedRef.current = true;
+                }).catch(() => {});
+            }
+        };
+        document.addEventListener("click", unlock, { once: true });
+        document.addEventListener("touchstart", unlock, { once: true });
+        return () => {
+            document.removeEventListener("click", unlock);
+            document.removeEventListener("touchstart", unlock);
+        };
+    }, []);
 
     // --- Order Fetching Logic (polling every 5s) ---
     const fetchOrders = useCallback(async () => {
@@ -44,26 +67,46 @@ export default function CashierDashboard() {
         return () => clearInterval(interval);
     }, [fetchOrders]);
 
-    // --- Ringing Logic ---
+    // --- Ringing Logic: ring when NEW pending orders arrive ---
     useEffect(() => {
-        // If there are pending orders and sound is enabled, and we aren't already playing, play.
-        const hasPending = orders.some(o => o.status === 'pending');
+        const currentPendingIds = new Set(orders.filter(o => o.status === 'pending').map(o => o.id));
+        
+        // Check if there are any new pending orders we haven't seen before
+        let hasNewPending = false;
+        currentPendingIds.forEach(id => {
+            if (!prevPendingIdsRef.current.has(id)) {
+                hasNewPending = true;
+            }
+        });
+
+        // Ring if there are ANY pending orders and sound is enabled
+        const hasPending = currentPendingIds.size > 0;
 
         if (hasPending && soundEnabled) {
-            // We can play directly without state if we just want to ensure it's looping
-            // But if we want to track 'isPlaying' for UI, we should do it carefully.
-            // Simplified: Just ensure it plays if enabled and needed.
             if (audioRef.current && audioRef.current.paused) {
                 audioRef.current.play().catch(e => console.error("Audio play failed", e));
             }
         } else {
-            // Stop if no pending or sound disabled
             if (audioRef.current && !audioRef.current.paused) {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
             }
         }
-    }, [orders, soundEnabled]);
+
+        // Also try browser notification for new orders
+        if (hasNewPending && soundEnabled && !loading) {
+            try {
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+                if (Notification.permission === 'granted') {
+                    new Notification('🔔 طلب جديد!', { body: 'يوجد طلب جديد بانتظار القبول', icon: '/logo.png' });
+                }
+            } catch {}
+        }
+
+        prevPendingIdsRef.current = currentPendingIds;
+    }, [orders, soundEnabled, loading]);
 
 
     // --- Status Actions ---
@@ -107,7 +150,10 @@ export default function CashierDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 p-6 font-sans flex flex-col gap-6">
-            <audio ref={audioRef} src="/ring.mp3" loop />
+            <audio ref={audioRef} loop preload="auto">
+                <source src="/ring.ogg" type="audio/ogg" />
+                <source src="/ring.wav" type="audio/wav" />
+            </audio>
 
             {/* Header */}
             <div className="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border border-slate-800 shadow-lg no-print">
