@@ -15,7 +15,8 @@ export default function CashierDashboard() {
     const [loading, setLoading] = useState(true);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const prevPendingIdsRef = useRef<Set<number>>(new Set());
-    const audioUnlockedRef = useRef(false);
+    const [audioReady, setAudioReady] = useState(false);
+    const shouldRingRef = useRef(false);
 
     const { user } = useAuth();
 
@@ -31,26 +32,34 @@ export default function CashierDashboard() {
         }
     }, []);
 
-    // Unlock audio on first user interaction (browser autoplay policy)
+    // Persistent click/touch handler to unlock audio & start playing if needed
     useEffect(() => {
-        const unlock = () => {
-            if (!audioUnlockedRef.current && audioRef.current) {
-                audioRef.current.muted = true;
-                audioRef.current.play().then(() => {
-                    audioRef.current!.pause();
-                    audioRef.current!.muted = false;
-                    audioRef.current!.currentTime = 0;
-                    audioUnlockedRef.current = true;
-                }).catch(() => {});
+        const tryPlay = async () => {
+            if (!audioRef.current) return;
+            if (!audioReady) {
+                try {
+                    audioRef.current.muted = true;
+                    await audioRef.current.play();
+                    audioRef.current.pause();
+                    audioRef.current.muted = false;
+                    audioRef.current.currentTime = 0;
+                    setAudioReady(true);
+                } catch { return; }
+            }
+            // If we should be ringing, start now
+            if (shouldRingRef.current && audioRef.current.paused) {
+                try {
+                    await audioRef.current.play();
+                } catch {}
             }
         };
-        document.addEventListener("click", unlock, { once: true });
-        document.addEventListener("touchstart", unlock, { once: true });
+        document.addEventListener("click", tryPlay);
+        document.addEventListener("touchstart", tryPlay);
         return () => {
-            document.removeEventListener("click", unlock);
-            document.removeEventListener("touchstart", unlock);
+            document.removeEventListener("click", tryPlay);
+            document.removeEventListener("touchstart", tryPlay);
         };
-    }, []);
+    }, [audioReady]);
 
     // --- Order Fetching Logic (polling every 5s) ---
     const fetchOrders = useCallback(async () => {
@@ -73,11 +82,11 @@ export default function CashierDashboard() {
         return () => clearInterval(interval);
     }, [fetchOrders]);
 
-    // --- Ringing Logic: ALWAYS ring when pending orders exist (no off switch) ---
+    // --- Ringing Logic: ALWAYS ring when pending orders exist ---
     useEffect(() => {
         const currentPendingIds = new Set(orders.filter(o => o.status === 'pending').map(o => o.id));
         
-        // Check if there are any NEW pending orders we haven't seen before
+        // Check for NEW pending orders
         const newOrderIds: number[] = [];
         currentPendingIds.forEach(id => {
             if (!prevPendingIdsRef.current.has(id)) {
@@ -86,11 +95,13 @@ export default function CashierDashboard() {
         });
 
         const hasPending = currentPendingIds.size > 0;
+        shouldRingRef.current = hasPending;
 
-        // Ring continuously while ANY pending orders exist
         if (hasPending) {
             if (audioRef.current && audioRef.current.paused) {
-                audioRef.current.play().catch(e => console.error("Audio play failed", e));
+                audioRef.current.play().catch(() => {
+                    // Browser blocked autoplay — will start on next user tap
+                });
             }
         } else {
             if (audioRef.current && !audioRef.current.paused) {
@@ -99,10 +110,9 @@ export default function CashierDashboard() {
             }
         }
 
-        // Send browser notification + vibrate for each new order
+        // Browser notification + vibrate for new orders
         if (newOrderIds.length > 0 && !loading) {
             try {
-                // Vibrate phone if supported
                 if (navigator.vibrate) {
                     navigator.vibrate([300, 100, 300, 100, 300]);
                 }
@@ -171,6 +181,29 @@ export default function CashierDashboard() {
                 <source src="/notify.mp3" type="audio/mpeg" />
                 <source src="/notify.wav" type="audio/wav" />
             </audio>
+
+            {/* Tap to enable sound banner */}
+            {!audioReady && (
+                <div
+                    className="bg-secondary text-white text-center py-3 px-4 rounded-xl font-bold text-lg cursor-pointer animate-pulse no-print"
+                    onClick={() => {
+                        if (audioRef.current) {
+                            audioRef.current.muted = true;
+                            audioRef.current.play().then(() => {
+                                audioRef.current!.pause();
+                                audioRef.current!.muted = false;
+                                audioRef.current!.currentTime = 0;
+                                setAudioReady(true);
+                                if (shouldRingRef.current) {
+                                    audioRef.current!.play().catch(() => {});
+                                }
+                            }).catch(() => {});
+                        }
+                    }}
+                >
+                    🔔 اضغط هنا لتفعيل صوت التنبيهات
+                </div>
+            )}
 
             {/* Header */}
             <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-brand-100 shadow-sm no-print">
