@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Order, OrderStatus } from "@/lib/types";
-import { Loader2, Truck, Package, Home, Clock, MapPin, MonitorSpeaker, Volume2, VolumeX, Printer, AlertCircle } from "lucide-react";
+import { Loader2, Truck, Package, Home, Clock, MapPin, MonitorSpeaker, Printer, AlertCircle } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +13,6 @@ export default function CashierDashboard() {
     const { t, language } = useLanguage();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [soundEnabled, setSoundEnabled] = useState(true);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const prevPendingIdsRef = useRef<Set<number>>(new Set());
     const audioUnlockedRef = useRef(false);
@@ -24,6 +23,13 @@ export default function CashierDashboard() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [rejectOrderId, setRejectOrderId] = useState<number | null>(null);
     const [rejectReason, setRejectReason] = useState("");
+
+    // Request notification permission on load
+    useEffect(() => {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     // Unlock audio on first user interaction (browser autoplay policy)
     useEffect(() => {
@@ -67,22 +73,22 @@ export default function CashierDashboard() {
         return () => clearInterval(interval);
     }, [fetchOrders]);
 
-    // --- Ringing Logic: ring when NEW pending orders arrive ---
+    // --- Ringing Logic: ALWAYS ring when pending orders exist (no off switch) ---
     useEffect(() => {
         const currentPendingIds = new Set(orders.filter(o => o.status === 'pending').map(o => o.id));
         
-        // Check if there are any new pending orders we haven't seen before
-        let hasNewPending = false;
+        // Check if there are any NEW pending orders we haven't seen before
+        const newOrderIds: number[] = [];
         currentPendingIds.forEach(id => {
             if (!prevPendingIdsRef.current.has(id)) {
-                hasNewPending = true;
+                newOrderIds.push(id);
             }
         });
 
-        // Ring if there are ANY pending orders and sound is enabled
         const hasPending = currentPendingIds.size > 0;
 
-        if (hasPending && soundEnabled) {
+        // Ring continuously while ANY pending orders exist
+        if (hasPending) {
             if (audioRef.current && audioRef.current.paused) {
                 audioRef.current.play().catch(e => console.error("Audio play failed", e));
             }
@@ -93,20 +99,31 @@ export default function CashierDashboard() {
             }
         }
 
-        // Also try browser notification for new orders
-        if (hasNewPending && soundEnabled && !loading) {
+        // Send browser notification + vibrate for each new order
+        if (newOrderIds.length > 0 && !loading) {
             try {
-                if (Notification.permission === 'default') {
-                    Notification.requestPermission();
+                // Vibrate phone if supported
+                if (navigator.vibrate) {
+                    navigator.vibrate([300, 100, 300, 100, 300]);
                 }
-                if (Notification.permission === 'granted') {
-                    new Notification('🔔 طلب جديد!', { body: 'يوجد طلب جديد بانتظار القبول', icon: '/logo.png' });
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                    const count = newOrderIds.length;
+                    new Notification(
+                        count === 1 ? '🔔 طلب جديد!' : `🔔 ${count} طلبات جديدة!`,
+                        {
+                            body: count === 1
+                                ? `طلب #${newOrderIds[0]} بانتظار القبول`
+                                : `${count} طلبات جديدة بانتظار القبول`,
+                            icon: '/logo.png',
+                            tag: 'new-order',
+                        } as NotificationOptions
+                    );
                 }
             } catch {}
         }
 
         prevPendingIdsRef.current = currentPendingIds;
-    }, [orders, soundEnabled, loading]);
+    }, [orders, loading]);
 
 
     // --- Status Actions ---
@@ -166,15 +183,9 @@ export default function CashierDashboard() {
                         <p className="text-brown/60 text-sm">{t("cashier.subtitle")}</p>
                     </div>
                 </div>
-                <div className="flex gap-4">
-                    <Button
-                        variant={soundEnabled ? "primary" : "outline"}
-                        onClick={() => setSoundEnabled(!soundEnabled)}
-                        className={cn("gap-2", soundEnabled ? "bg-brand hover:bg-brand-dark text-white" : "border-brand-100 text-brown hover:bg-brand-50")}
-                    >
-                        {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                        {soundEnabled ? t("cashier.sound_on") : t("cashier.sound_off")}
-                    </Button>
+                <div className="flex items-center gap-2 text-brand-light text-sm">
+                    <span className="inline-block w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+                    {t("cashier.subtitle") || "مباشر"}
                 </div>
             </div>
 
