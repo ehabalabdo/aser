@@ -99,11 +99,11 @@ export default function HomePage() {
             {/* Hero Section (Offers Slider) */}
             {offers.length > 0 && (
                 <section className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg aspect-[16/9] sm:aspect-[21/9] md:aspect-[21/7]">
-                    <div className="absolute inset-0 transition-transform duration-700 ease-out flex" style={{ transform: `translateX(${currentSlide * 100}%)`, direction: 'ltr' }}>
+                    <div className="absolute inset-0 transition-transform duration-700 ease-out flex" style={{ transform: `translateX(${-currentSlide * 100}%)`, direction: 'ltr' }}>
                         {/* Note: Direction LTR is needed for transform translateX logic to work predictably, but content is RTL */}
                         {offers.map((offer, index) => (
-                            <div key={offer.id} className="relative min-w-full h-full" dir="rtl">
-                                {offer.imageUrl && <Image src={offer.imageUrl} alt={offer.titleAr} fill className="object-cover" priority={index === 0} />}
+                            <div key={offer.id} className="relative min-w-full h-full bg-gradient-to-br from-primary via-brand-dark to-secondary" dir="rtl">
+                                {offer.imageUrl && <Image src={offer.imageUrl} alt={offer.titleAr} fill className="object-cover" priority={index === 0} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent flex flex-col justify-center px-4 sm:px-6 md:px-12 text-white">
                                     <Badge className="w-fit mb-2 sm:mb-4 bg-accent text-black font-bold animate-fade-in text-xs sm:text-sm">{t("home.featured")}</Badge>
                                     <h2 className="text-xl sm:text-3xl md:text-5xl font-black mb-1 sm:mb-2 max-w-lg leading-tight animate-fade-in">
