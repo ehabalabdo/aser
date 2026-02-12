@@ -168,6 +168,7 @@ export default function CashierDashboard() {
     return (
         <div className="min-h-screen bg-surface text-gray-800 p-6 font-sans flex flex-col gap-6">
             <audio ref={audioRef} loop preload="auto">
+                <source src="/notify.mp3" type="audio/mpeg" />
                 <source src="/notify.wav" type="audio/wav" />
             </audio>
 
